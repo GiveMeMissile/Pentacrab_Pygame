@@ -37,7 +37,7 @@ def draw():
     platform_location_y = 550
     WINDOW.blit(BACKGROUND, (0, 0))
     pygame.draw.rect(WINDOW, (255, 0, 0), HITBOX)
-    for _ in range(10):
+    for _ in range(5):
         WINDOW.blit(PLATFORM, (platform_location_x, platform_location_y))
         platforms.append([platform_location_x, platform_location_y])
         platform_location_x += PLATFORM_WIDTH + 50
@@ -108,7 +108,7 @@ def gravity():
         for platform_location_x, platform_location_y in platforms:
             platform_rect = pygame.Rect(platform_location_x, platform_location_y, PLATFORM_WIDTH, PLATFORM_HEIGHT)
             if HITBOX.colliderect(platform_rect) and HITBOX.bottom <= platform_rect.top + GRAVITY:
-                HITBOX.y = platform_rect.y - HITBOX_HEIGHT
+                HITBOX.y = platform_rect.y + 5 - HITBOX_HEIGHT
                 initial_height = HITBOX.y
                 falling = False
                 return
@@ -119,7 +119,6 @@ def gravity():
             return
         if falling == True:
             HITBOX.y += GRAVITY
-        Jump = False
 
 
 def main():
@@ -143,7 +142,7 @@ def main():
         falling = True
         if not Jump:
             gravity()
-        elif Jump:
+        else:
             player_jump()
         player_movements()
         draw()
