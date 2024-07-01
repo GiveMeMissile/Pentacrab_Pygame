@@ -4,8 +4,8 @@ import os
 pygame.init()
 
 # Window control
-WIDTH = 1200
-HEIGHT = 600
+WIDTH = 1350
+HEIGHT = 650
 WINDOW = pygame.display.set_mode((WIDTH, HEIGHT))
 BACKGROUND = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Background.png")), (WIDTH, HEIGHT))
 FPS = 60
@@ -16,12 +16,15 @@ JUMP_SLOW = 30
 GRAVITY = 7
 HITBOX_WIDTH, HITBOX_HEIGHT = 20, 70
 velocity = 0
-ACCELERATION = 0.5
-MAX_VELOCITY = 5
+ACCELERATION = 1
+MAX_VELOCITY = 7
 FRICTION = 0.1
+TELEPORT_AMOUNT = 500
 X = WIDTH // 2
 Y = HEIGHT - HITBOX_HEIGHT
 HITBOX = pygame.Rect(X, Y, HITBOX_WIDTH, HITBOX_HEIGHT)
+
+# Sounds
 JUMP_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Player_jump.mp3")
 
 # Platform settings
@@ -32,16 +35,27 @@ PLATFORM = pygame.transform.rotate(pygame.transform.scale(PLATFORM_IMAGE, (PLATF
 
 platforms = []
 
+# Boss settings
+BOSS_WIDTH , BOSS_HEIGHT = 100, 100
+BOSS_Y = 50
+BOSS_HITBOX = pygame.Rect(X - 50, BOSS_Y, BOSS_WIDTH, BOSS_HEIGHT)
+
 def draw():
+    Plat = 0
     platform_location_x = 100
-    platform_location_y = 550
+    platform_location_y = 280
     WINDOW.blit(BACKGROUND, (0, 0))
     pygame.draw.rect(WINDOW, (255, 0, 0), HITBOX)
+    pygame.draw.rect(WINDOW, (255, 0, 255), BOSS_HITBOX)
     for _ in range(5):
         WINDOW.blit(PLATFORM, (platform_location_x, platform_location_y))
         platforms.append([platform_location_x, platform_location_y])
         platform_location_x += PLATFORM_WIDTH + 50
-        platform_location_y -= PLATFORM_HEIGHT
+        Plat += 1
+        if Plat <= 2:
+            platform_location_y += PLATFORM_HEIGHT + 50
+        elif Plat >= 3:
+            platform_location_y -= PLATFORM_HEIGHT + 50
     pygame.display.update()
 
 def player_movements():
@@ -108,7 +122,7 @@ def gravity():
         for platform_location_x, platform_location_y in platforms:
             platform_rect = pygame.Rect(platform_location_x, platform_location_y, PLATFORM_WIDTH, PLATFORM_HEIGHT)
             if HITBOX.colliderect(platform_rect) and HITBOX.bottom <= platform_rect.top + GRAVITY:
-                HITBOX.y = platform_rect.y + 5 - HITBOX_HEIGHT
+                HITBOX.y = platform_rect.y + GRAVITY - HITBOX_HEIGHT
                 initial_height = HITBOX.y
                 falling = False
                 return
