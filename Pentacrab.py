@@ -45,22 +45,23 @@ BOSS_Y = 100
 BOSS_HITBOX = pygame.Rect(X - 50, BOSS_Y, BOSS_WIDTH, BOSS_HEIGHT)
 
 def draw():
-    Plat = 0
-    platform_location_x = 100
-    platform_location_y = 280
     WINDOW.blit(BACKGROUND, (0, 0))
     pygame.draw.rect(WINDOW, (255, 0, 0), HITBOX)
     pygame.draw.rect(WINDOW, (255, 0, 255), BOSS_HITBOX)
-    for _ in range(5):
+    for platform_location_x, platform_location_y in platforms:
         WINDOW.blit(PLATFORM, (platform_location_x, platform_location_y))
+    pygame.display.update()
+
+def setup_platforms():
+    platform_location_x = 100
+    platform_location_y = 280
+    for _ in range(5):
         platforms.append([platform_location_x, platform_location_y])
         platform_location_x += PLATFORM_WIDTH + 50
-        Plat += 1
-        if Plat <= 2:
+        if len(platforms) <= 2:
             platform_location_y += PLATFORM_HEIGHT + 50
-        elif Plat >= 3:
+        else:
             platform_location_y -= PLATFORM_HEIGHT + 50
-    pygame.display.update()
 
 def player_movements():
     global velocity, X
@@ -138,21 +139,25 @@ def gravity():
         if falling == True:
             HITBOX.y += GRAVITY
 
-def teleport_up():
-    if HITBOX.y + TELEPORT_AMOUNT <= BOSS_Y:
-        HITBOX.y -= TELEPORT_AMOUNT
-    else:
-        HITBOX.y = BOSS_Y
+def teleport():
+    global tele_up, tele_left, tp_cooldown, tp_delay
+    if tele_up and (current_time - tp_delay >= TP_DELAY):
+        if HITBOX.y + TELEPORT_AMOUNT <= BOSS_Y:
+            HITBOX.y -= TELEPORT_AMOUNT
+        else:
+            HITBOX.y = BOSS_Y
+        tele_up = False
+    elif tele_left and (current_time - tp_delay >= TP_DELAY):
+        if HITBOX.x + TELEPORT_AMOUNT <= 0:
+            HITBOX.x -= TELEPORT_AMOUNT
+        else:
+            HITBOX.x = 0
+        tele_left = False
 
-def teleport_left():
-    if HITBOX.x - TELEPORT_AMOUNT >= 0:
-        HITBOX.x -= TELEPORT_AMOUNT
-    else:
-        HITBOX.x = 0
-
-
+    if tp_cooldown and (current_time - tp_delay >= TP_COOLDOWN):
+        tp_cooldown = False
 def main():
-    global run, Jump, decent, falling, platforms, initial_height, tele_up
+    global run, Jump, decent, falling, initial_height, tele_up, current_time, tp_delay, tele_left, tp_cooldown
     tp_delay = 99999999
     tp_cooldown = False
     tele_up = False
@@ -160,8 +165,9 @@ def main():
     falling = True
     Jump = False
     decent = False
-    platforms = []
+    platforms.clear()
     initial_height = HEIGHT - HITBOX_HEIGHT
+    setup_platforms()
     run = True
     clock = pygame.time.Clock()
     while run:
@@ -187,16 +193,10 @@ def main():
             gravity()
         else:
             player_jump()
-        if tele_up and (current_time - tp_delay >= TP_DELAY):
-            teleport_up()
-            tele_up = False
-        if tele_left and (current_time - tp_delay >= TP_DELAY):
-            teleport_left()
-            tele_left = False
-        if not tp_cooldown and (current_time - tp_delay >= TP_COOLDOWN):
-            tp_cooldown = False
+        teleport()
         player_movements()
         draw()
     pygame.quit()
+
 
 main()
