@@ -19,7 +19,11 @@ velocity = 0
 ACCELERATION = 1
 MAX_VELOCITY = 7
 FRICTION = 0.1
+
 TELEPORT_AMOUNT = 500
+TP_DELAY = 500
+TP_COOLDOWN = 5500
+
 X = WIDTH // 2
 Y = HEIGHT - HITBOX_HEIGHT
 HITBOX = pygame.Rect(X, Y, HITBOX_WIDTH, HITBOX_HEIGHT)
@@ -37,7 +41,7 @@ platforms = []
 
 # Boss settings
 BOSS_WIDTH , BOSS_HEIGHT = 100, 100
-BOSS_Y = 50
+BOSS_Y = 100
 BOSS_HITBOX = pygame.Rect(X - 50, BOSS_Y, BOSS_WIDTH, BOSS_HEIGHT)
 
 def draw():
@@ -134,9 +138,25 @@ def gravity():
         if falling == True:
             HITBOX.y += GRAVITY
 
+def teleport_up():
+    if HITBOX.y + TELEPORT_AMOUNT <= BOSS_Y:
+        HITBOX.y -= TELEPORT_AMOUNT
+    else:
+        HITBOX.y = BOSS_Y
+
+def teleport_left():
+    if HITBOX.x - TELEPORT_AMOUNT >= 0:
+        HITBOX.x -= TELEPORT_AMOUNT
+    else:
+        HITBOX.x = 0
+
 
 def main():
-    global run, Jump, decent, falling, platforms, initial_height
+    global run, Jump, decent, falling, platforms, initial_height, tele_up
+    tp_delay = 99999999
+    tp_cooldown = False
+    tele_up = False
+    tele_left = False
     falling = True
     Jump = False
     decent = False
@@ -145,12 +165,21 @@ def main():
     run = True
     clock = pygame.time.Clock()
     while run:
+        current_time = pygame.time.get_ticks()
         clock.tick(FPS)
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_w and not Jump and not falling:
                     Jump = True
                     JUMP_SOUND.play()
+                if event.key == pygame.K_UP and not tp_cooldown:
+                    tele_up = True
+                    tp_delay = current_time
+                    tp_cooldown = True
+                if event.key == pygame.K_LEFT and not tp_cooldown:
+                    tele_left = True
+                    tp_delay = current_time
+                    tp_cooldown = True
             if event.type == pygame.QUIT:
                 run = False
         falling = True
@@ -158,6 +187,14 @@ def main():
             gravity()
         else:
             player_jump()
+        if tele_up and (current_time - tp_delay >= TP_DELAY):
+            teleport_up()
+            tele_up = False
+        if tele_left and (current_time - tp_delay >= TP_DELAY):
+            teleport_left()
+            tele_left = False
+        if not tp_cooldown and (current_time - tp_delay >= TP_COOLDOWN):
+            tp_cooldown = False
         player_movements()
         draw()
     pygame.quit()
