@@ -17,7 +17,7 @@ GRAVITY = 7
 HITBOX_WIDTH, HITBOX_HEIGHT = 20, 70
 velocity = 0
 ACCELERATION = 1
-MAX_VELOCITY = 7
+MAX_VELOCITY = 6
 FRICTION = 0.1
 
 TELEPORT_AMOUNT = 500
@@ -28,16 +28,20 @@ X = WIDTH // 2
 Y = HEIGHT - HITBOX_HEIGHT
 HITBOX = pygame.Rect(X, Y, HITBOX_WIDTH, HITBOX_HEIGHT)
 
+PLAYER = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Player.png")), (HITBOX_WIDTH + 30, HITBOX_HEIGHT + 20))
+PLAYER_JUMP = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Player_jump.png")),(HITBOX_WIDTH + 30, HITBOX_HEIGHT + 20))
+
 # Sounds
 JUMP_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Player_jump.mp3")
 
 # Platform settings
 PLATFORM_HEIGHT = 60
 PLATFORM_WIDTH = 200
+platforms = []
 PLATFORM_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Cloud_platfrom.png")), (PLATFORM_WIDTH, PLATFORM_HEIGHT))
 PLATFORM = pygame.transform.rotate(pygame.transform.scale(PLATFORM_IMAGE, (PLATFORM_WIDTH, PLATFORM_HEIGHT)), 180)
 
-platforms = []
+
 
 # Boss settings
 BOSS_WIDTH , BOSS_HEIGHT = 100, 100
@@ -46,10 +50,13 @@ BOSS_HITBOX = pygame.Rect(X - 50, BOSS_Y, BOSS_WIDTH, BOSS_HEIGHT)
 
 def draw():
     WINDOW.blit(BACKGROUND, (0, 0))
-    pygame.draw.rect(WINDOW, (255, 0, 0), HITBOX)
     pygame.draw.rect(WINDOW, (255, 0, 255), BOSS_HITBOX)
     for platform_location_x, platform_location_y in platforms:
         WINDOW.blit(PLATFORM, (platform_location_x, platform_location_y))
+    if not Jump:
+        WINDOW.blit(PLAYER, (HITBOX.x - 15, HITBOX.y - 15))
+    if Jump:
+        WINDOW.blit(PLAYER_JUMP, (HITBOX.x - 15,HITBOX.y - 15 ))
     pygame.display.update()
 
 def setup_platforms():
@@ -64,7 +71,7 @@ def setup_platforms():
             platform_location_y -= PLATFORM_HEIGHT + 50
 
 def player_movements():
-    global velocity, X
+    global velocity
     keys = pygame.key.get_pressed()
     if keys[pygame.K_d]:
         velocity += ACCELERATION
@@ -85,15 +92,13 @@ def player_movements():
     elif velocity < -MAX_VELOCITY:
         velocity = -MAX_VELOCITY
 
-    X += velocity
-    if X < 0:
-        X = 0
+    HITBOX.x += velocity
+    if HITBOX.x < 0:
+        HITBOX.x = 0
         velocity = 0
-    elif X + HITBOX_WIDTH > WIDTH:
-        X = WIDTH - HITBOX_WIDTH
+    elif HITBOX.x + HITBOX_WIDTH > WIDTH:
+        HITBOX.x = WIDTH - HITBOX_WIDTH
         velocity = 0
-
-    HITBOX.x = X
 
 def player_jump():
     global decent, Jump, initial_height, falling
@@ -140,28 +145,39 @@ def gravity():
             HITBOX.y += GRAVITY
 
 def teleport():
-    global tele_up, tele_left, tp_cooldown, tp_delay
+    global tele_up, tele_left, tele_right, tp_cooldown, tp_delay
+
     if tele_up and (current_time - tp_delay >= TP_DELAY):
         if HITBOX.y + TELEPORT_AMOUNT <= BOSS_Y:
             HITBOX.y -= TELEPORT_AMOUNT
         else:
             HITBOX.y = BOSS_Y
         tele_up = False
-    elif tele_left and (current_time - tp_delay >= TP_DELAY):
-        if HITBOX.x + TELEPORT_AMOUNT <= 0:
+
+    if tele_left and (current_time - tp_delay >= TP_DELAY):
+        if HITBOX.x - TELEPORT_AMOUNT >= 0:
             HITBOX.x -= TELEPORT_AMOUNT
         else:
             HITBOX.x = 0
         tele_left = False
 
+    if tele_right and (current_time - tp_delay >= TP_DELAY):
+        if HITBOX.x + TELEPORT_AMOUNT <= WIDTH:
+            HITBOX.x += TELEPORT_AMOUNT
+        else:
+            HITBOX.x = WIDTH
+        tele_right = False
+
     if tp_cooldown and (current_time - tp_delay >= TP_COOLDOWN):
         tp_cooldown = False
 def main():
-    global run, Jump, decent, falling, initial_height, tele_up, current_time, tp_delay, tele_left, tp_cooldown
+    global run, Jump, decent, falling, initial_height, tele_up, current_time, tp_delay, \
+        tele_left, tp_cooldown, tele_right
     tp_delay = 99999999
     tp_cooldown = False
     tele_up = False
     tele_left = False
+    tele_right = False
     falling = True
     Jump = False
     decent = False
@@ -184,6 +200,10 @@ def main():
                     tp_cooldown = True
                 if event.key == pygame.K_LEFT and not tp_cooldown:
                     tele_left = True
+                    tp_delay = current_time
+                    tp_cooldown = True
+                if event.key == pygame.K_RIGHT and not tp_cooldown:
+                    tele_right = True
                     tp_delay = current_time
                     tp_cooldown = True
             if event.type == pygame.QUIT:
