@@ -28,8 +28,10 @@ X = WIDTH // 2
 Y = HEIGHT - HITBOX_HEIGHT
 HITBOX = pygame.Rect(X, Y, HITBOX_WIDTH, HITBOX_HEIGHT)
 
-PLAYER = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Player.png")), (HITBOX_WIDTH + 30, HITBOX_HEIGHT + 20))
-PLAYER_JUMP = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Player_jump.png")),(HITBOX_WIDTH + 30, HITBOX_HEIGHT + 20))
+PLAYER_RIGHT = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Player.png")), (HITBOX_WIDTH + 30, HITBOX_HEIGHT + 20))
+PLAYER_LEFT = pygame.transform.flip(PLAYER_RIGHT, flip_y=False, flip_x=True)
+PLAYER_JUMP_RIGHT = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Player_jump.png")),(HITBOX_WIDTH + 30, HITBOX_HEIGHT + 20))
+PLAYER_JUMP_LEFT = pygame.transform.flip(PLAYER_JUMP_RIGHT, flip_y=False, flip_x=True)
 
 # Sounds
 JUMP_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Player_jump.mp3")
@@ -54,9 +56,15 @@ def draw():
     for platform_location_x, platform_location_y in platforms:
         WINDOW.blit(PLATFORM, (platform_location_x, platform_location_y))
     if not Jump:
-        WINDOW.blit(PLAYER, (HITBOX.x - 15, HITBOX.y - 15))
+        if left:
+            WINDOW.blit(PLAYER_LEFT, (HITBOX.x - 15, HITBOX.y - 15))
+        else:
+            WINDOW.blit(PLAYER_RIGHT, (HITBOX.x - 15, HITBOX.y - 15))
     if Jump:
-        WINDOW.blit(PLAYER_JUMP, (HITBOX.x - 15,HITBOX.y - 15 ))
+        if left:
+            WINDOW.blit(PLAYER_JUMP_LEFT, (HITBOX.x - 15, HITBOX.y - 15))
+        else:
+            WINDOW.blit(PLAYER_JUMP_RIGHT, (HITBOX.x - 15,HITBOX.y - 15 ))
     pygame.display.update()
 
 def setup_platforms():
@@ -71,11 +79,13 @@ def setup_platforms():
             platform_location_y -= PLATFORM_HEIGHT + 50
 
 def player_movements():
-    global velocity
+    global velocity, left
     keys = pygame.key.get_pressed()
     if keys[pygame.K_d]:
         velocity += ACCELERATION
+        left = False
     elif keys[pygame.K_a]:
+        left = True
         velocity -= ACCELERATION
     else:
         if velocity > 0:
@@ -172,8 +182,9 @@ def teleport():
         tp_cooldown = False
 def main():
     global run, Jump, decent, falling, initial_height, tele_up, current_time, tp_delay, \
-        tele_left, tp_cooldown, tele_right
+        tele_left, tp_cooldown, tele_right, left
     tp_delay = 99999999
+    left = False
     tp_cooldown = False
     tele_up = False
     tele_left = False
