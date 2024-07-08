@@ -10,6 +10,7 @@ WINDOW = pygame.display.set_mode((WIDTH, HEIGHT))
 BACKGROUND = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Background.png")),
                                     (WIDTH, HEIGHT))
 FPS = 60
+HEALTH_FONT = pygame.font.SysFont("comicsans", 40)
 
 # Player settings
 JUMP_HEIGHT = 70
@@ -21,6 +22,7 @@ ACCELERATION = 1
 MAX_VELOCITY = 6
 FRICTION = 0.1
 PLAYER_DIFFERENCE = 15
+TELEPORT_DAMAGE = 5
 
 TELEPORT_AMOUNT = 500
 TP_DELAY = 500
@@ -56,15 +58,22 @@ PLATFORM = pygame.transform.rotate(pygame.transform.scale(PLATFORM_IMAGE, (PLATF
 BOSS_WIDTH, BOSS_HEIGHT = 100, 100
 BOSS_Y = 100
 BOSS_HITBOX = pygame.Rect(X - 50, BOSS_Y, BOSS_WIDTH, BOSS_HEIGHT)
+BOSS_MOVEMENT = 5
+
+BOSS_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Pentacrab.png")), (BOSS_WIDTH + 40, BOSS_HEIGHT + 50))
 
 
 def draw():
     WINDOW.blit(BACKGROUND, (0, 0))
-    pygame.draw.rect(WINDOW, (255, 0, 255), BOSS_HITBOX)
+    boss_health_text = HEALTH_FONT.render("Boss Health: " + str(boss_health), 1, (255, 255, 255 ))
+    WINDOW.blit(boss_health_text, (0, 0))
     for platform_location_x, platform_location_y in platforms:
         WINDOW.blit(PLATFORM, (platform_location_x, platform_location_y))
     for portal_hitbox in tp_hitbox:
         WINDOW.blit(TELEPORT_SYMBOL, (portal_hitbox.x, portal_hitbox.y))
+    
+    WINDOW.blit(BOSS_IMAGE, (BOSS_HITBOX.x - 20, BOSS_HITBOX.y))
+    
     if not Jump:
         if left:
             WINDOW.blit(PLAYER_LEFT, (HITBOX.x - 15, HITBOX.y - 15))
@@ -225,10 +234,31 @@ def teleport_visual():
         tp_hitbox.clear()
         tp = False
 
+def boss():
+    global boss_right, boss_health, victory
+    if BOSS_HITBOX.x >= WIDTH - BOSS_WIDTH:
+        boss_right = False
+    if BOSS_HITBOX.x <= 0:
+        boss_right = True
+    if boss_right and not victory:
+        BOSS_HITBOX.x += BOSS_MOVEMENT
+    elif not victory:
+        BOSS_HITBOX.x -= BOSS_MOVEMENT
+    for portal_hitbox in tp_hitbox:
+        if BOSS_HITBOX.colliderect(portal_hitbox):
+            boss_health -= 5
+    if boss_health <= 0:
+        BOSS_HITBOX.y -= 500
+        victory = True
 
 def main():
     global run, Jump, decent, falling, initial_height, tele_up, current_time, tp_delay, \
-        tele_left, tp_cooldown, tele_right, left, tp_hitbox, tp
+        tele_left, tp_cooldown, tele_right, left, tp_hitbox, tp, boss_right, boss_health, \
+        player_health, victory
+    victory = False
+    boss_right = True
+    boss_health = 100
+    player_health = 30
     tp_hitbox = []
     tp = False
     tp_delay = 99999999
@@ -278,6 +308,7 @@ def main():
         teleport_visual()
         teleport_movement()
         player_movements()
+        boss()
         draw()
     pygame.quit()
 
