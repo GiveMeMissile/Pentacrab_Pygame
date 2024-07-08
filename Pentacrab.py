@@ -198,9 +198,12 @@ def teleport_movement():
 
 
 def teleport_visual():
-    global tp_hitbox
+    global tp_hitbox, tp
     dif = 0
+    if tp:
+        tp_hitbox.clear()
     if tele_up or tele_left or tele_right:
+        tp = True
         for _ in range(2):
             dif += 1
             if dif == 1:
@@ -220,12 +223,14 @@ def teleport_visual():
             tp_hitbox.append(portal_hitbox)
     else:
         tp_hitbox.clear()
+        tp = False
 
 
 def main():
     global run, Jump, decent, falling, initial_height, tele_up, current_time, tp_delay, \
-        tele_left, tp_cooldown, tele_right, left, tp_hitbox
+        tele_left, tp_cooldown, tele_right, left, tp_hitbox, tp
     tp_hitbox = []
+    tp = False
     tp_delay = 99999999
     left = False
     tp_cooldown = False
