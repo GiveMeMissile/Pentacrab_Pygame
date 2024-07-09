@@ -10,7 +10,6 @@ WINDOW = pygame.display.set_mode((WIDTH, HEIGHT))
 BACKGROUND = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Background.png")),
                                     (WIDTH, HEIGHT))
 FPS = 60
-HEALTH_FONT = pygame.font.SysFont("comicsans", 40)
 
 # Player settings
 JUMP_HEIGHT = 70
@@ -59,14 +58,25 @@ BOSS_WIDTH, BOSS_HEIGHT = 100, 100
 BOSS_Y = 100
 BOSS_HITBOX = pygame.Rect(X - 50, BOSS_Y, BOSS_WIDTH, BOSS_HEIGHT)
 BOSS_MOVEMENT = 5
+BOSS_CONTACT_DAMAGE = 3
 
 BOSS_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Pentacrab.png")), (BOSS_WIDTH + 40, BOSS_HEIGHT + 50))
 
+#other
+HEALTH_FONT = pygame.font.SysFont("comicsans", 40)
+IMMUNITY = 500
 
+def location_reset():
+    HITBOX.x = WIDTH/2 + HITBOX_WIDTH/2
+    HITBOX.y = HEIGHT - HITBOX_HEIGHT
+    BOSS_HITBOX.x = WIDTH/2 - BOSS_WIDTH/2
+    BOSS_HITBOX.y = BOSS_Y
 def draw():
     WINDOW.blit(BACKGROUND, (0, 0))
     boss_health_text = HEALTH_FONT.render("Boss Health: " + str(boss_health), 1, (255, 255, 255 ))
+    player_health_text = HEALTH_FONT.render("Player Health: " + str(player_health), 1, (255, 255, 255))
     WINDOW.blit(boss_health_text, (0, 0))
+    WINDOW.blit(player_health_text, (WIDTH - 350, 0))
     for platform_location_x, platform_location_y in platforms:
         WINDOW.blit(PLATFORM, (platform_location_x, platform_location_y))
     for portal_hitbox in tp_hitbox:
@@ -101,27 +111,28 @@ def setup_platforms():
 
 def player_movements():
     global velocity, left
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_d]:
-        velocity += ACCELERATION
-        left = False
-    elif keys[pygame.K_a]:
-        left = True
-        velocity -= ACCELERATION
-    else:
-        if velocity > 0:
-            velocity -= FRICTION
-            if velocity < 0:
-                velocity = 0
-        elif velocity < 0:
-            velocity += FRICTION
+    if player_health >= 0:
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_d]:
+            velocity += ACCELERATION
+            left = False
+        elif keys[pygame.K_a]:
+            left = True
+            velocity -= ACCELERATION
+        else:
             if velocity > 0:
-                velocity = 0
+                velocity -= FRICTION
+                if velocity < 0:
+                    velocity = 0
+            elif velocity < 0:
+                velocity += FRICTION
+                if velocity > 0:
+                    velocity = 0
 
-    if velocity > MAX_VELOCITY:
-        velocity = MAX_VELOCITY
-    elif velocity < -MAX_VELOCITY:
-        velocity = -MAX_VELOCITY
+        if velocity > MAX_VELOCITY:
+            velocity = MAX_VELOCITY
+        elif velocity < -MAX_VELOCITY:
+            velocity = -MAX_VELOCITY
 
     HITBOX.x += velocity
     if HITBOX.x < 0:
@@ -234,7 +245,7 @@ def teleport_visual():
         tp_hitbox.clear()
         tp = False
 
-def boss():
+def boss_movement():
     global boss_right, boss_health, victory
     if BOSS_HITBOX.x >= WIDTH - BOSS_WIDTH:
         boss_right = False
@@ -244,6 +255,9 @@ def boss():
         BOSS_HITBOX.x += BOSS_MOVEMENT
     elif not victory:
         BOSS_HITBOX.x -= BOSS_MOVEMENT
+
+def boss_health_manager():
+    global boss_health, victory
     for portal_hitbox in tp_hitbox:
         if BOSS_HITBOX.colliderect(portal_hitbox):
             boss_health -= 5
@@ -251,10 +265,23 @@ def boss():
         BOSS_HITBOX.y -= 500
         victory = True
 
+def player_health_manager():
+    global player_health, boss_immunity, boss_immunity_timer
+    if not boss_immunity:
+        if HITBOX.colliderect(BOSS_HITBOX):
+            player_health -= BOSS_CONTACT_DAMAGE
+            boss_immunity = True
+            boss_immunity_timer = current_time
+    if current_time - boss_immunity_timer >= IMMUNITY and boss_immunity:
+        boss_immunity = False
+
 def main():
     global run, Jump, decent, falling, initial_height, tele_up, current_time, tp_delay, \
         tele_left, tp_cooldown, tele_right, left, tp_hitbox, tp, boss_right, boss_health, \
-        player_health, victory
+        player_health, victory, boss_immunity, boss_immunity_timer
+    location_reset()
+    boss_immunity_timer = 99999999
+    boss_immunity = False
     victory = False
     boss_right = True
     boss_health = 100
@@ -308,7 +335,11 @@ def main():
         teleport_visual()
         teleport_movement()
         player_movements()
-        boss()
+        boss_health_manager()
+        player_health_manager()
+        boss_movement()
+        if player_health <= 0:
+            main()
         draw()
     pygame.quit()
 
