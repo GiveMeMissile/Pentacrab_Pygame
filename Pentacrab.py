@@ -59,6 +59,7 @@ BOSS_Y = 100
 BOSS_HITBOX = pygame.Rect(X - 50, BOSS_Y, BOSS_WIDTH, BOSS_HEIGHT)
 BOSS_MOVEMENT = 5
 BOSS_CONTACT_DAMAGE = 3
+BOSS_ATTACK_DELAY = 5000
 
 BOSS_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Pentacrab.png")), (BOSS_WIDTH + 40, BOSS_HEIGHT + 50))
 
@@ -256,32 +257,50 @@ def boss_movement():
     elif not victory:
         BOSS_HITBOX.x -= BOSS_MOVEMENT
 
+def boss_attack_handler():
+    global  boss_attack, boss_attack_timer
+    if boss_attack:
+        boss_attack_timer = current_time
+        boss_attack = False
+    if current_time - boss_attack_timer >= BOSS_ATTACK_DELAY and not boss_attack:
+        boss_attack = True
+    
 def boss_health_manager():
-    global boss_health, victory
-    for portal_hitbox in tp_hitbox:
-        if BOSS_HITBOX.colliderect(portal_hitbox):
-            boss_health -= 5
+    global boss_health, victory, boss_immunity, boss_immunity_timer
+    if not boss_immunity:
+        boss_immunity = True
+        boss_immunity_timer = current_time
+        for portal_hitbox in tp_hitbox:
+            if BOSS_HITBOX.colliderect(portal_hitbox):
+                boss_health -= 5
+    if current_time - boss_immunity_timer >= IMMUNITY:
+        boss_immunity = False
     if boss_health <= 0:
         BOSS_HITBOX.y -= 500
         victory = True
 
 def player_health_manager():
-    global player_health, boss_immunity, boss_immunity_timer
-    if not boss_immunity:
+    global player_health, player_immunity, player_immunity_timer
+    if not player_immunity:
         if HITBOX.colliderect(BOSS_HITBOX):
             player_health -= BOSS_CONTACT_DAMAGE
-            boss_immunity = True
-            boss_immunity_timer = current_time
-    if current_time - boss_immunity_timer >= IMMUNITY and boss_immunity:
-        boss_immunity = False
+            player_immunity = True
+            player_immunity_timer = current_time
+    if current_time - player_immunity_timer >= IMMUNITY and player_immunity:
+        player_immunity = False
 
 def main():
     global run, Jump, decent, falling, initial_height, tele_up, current_time, tp_delay, \
         tele_left, tp_cooldown, tele_right, left, tp_hitbox, tp, boss_right, boss_health, \
-        player_health, victory, boss_immunity, boss_immunity_timer
+        player_health, victory, player_immunity, player_immunity_timer, boss_immunity_timer,\
+        boss_immunity, boss_attack, boss_attack_timer
     location_reset()
+    boss_attack_timer = 0
+    boss_attack = False
     boss_immunity_timer = 99999999
     boss_immunity = False
+    player_immunity_timer = 99999999
+    player_immunity = False
     victory = False
     boss_right = True
     boss_health = 100
@@ -335,6 +354,7 @@ def main():
         teleport_visual()
         teleport_movement()
         player_movements()
+        boss_attack_handler()
         boss_health_manager()
         player_health_manager()
         boss_movement()
