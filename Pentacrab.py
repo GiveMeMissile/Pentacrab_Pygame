@@ -283,7 +283,7 @@ def boss_attack_handler():
                 boss_bullets.append(bullet)
                 bullet_delay_timer = current_time
                 bullet_total += 1
-            else:aa
+            else:
                 if bullet_total >= 5:
                     attack_number = 6
                     attack_end = True
