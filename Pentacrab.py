@@ -1,5 +1,6 @@
 import pygame
 import os
+import random
 
 pygame.init()
 
@@ -60,6 +61,9 @@ BOSS_HITBOX = pygame.Rect(X - 50, BOSS_Y, BOSS_WIDTH, BOSS_HEIGHT)
 BOSS_MOVEMENT = 5
 BOSS_CONTACT_DAMAGE = 3
 BOSS_ATTACK_DELAY = 5000
+BOSS_BULLET_DELAY = 500
+boss_bullets = []
+BULLET_DAMAGE = 1
 
 BOSS_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Pentacrab.png")), (BOSS_WIDTH + 40, BOSS_HEIGHT + 50))
 
@@ -84,7 +88,10 @@ def draw():
         WINDOW.blit(TELEPORT_SYMBOL, (portal_hitbox.x, portal_hitbox.y))
     
     WINDOW.blit(BOSS_IMAGE, (BOSS_HITBOX.x - 20, BOSS_HITBOX.y))
-    
+
+    for bullet in boss_bullets:
+        pygame.draw.rect(WINDOW, (255, 0, 0), bullet)
+
     if not Jump:
         if left:
             WINDOW.blit(PLAYER_LEFT, (HITBOX.x - 15, HITBOX.y - 15))
@@ -257,14 +264,40 @@ def boss_movement():
     elif not victory:
         BOSS_HITBOX.x -= BOSS_MOVEMENT
 
+def boss_bullet_movement():
+    for bullet in boss_bullets:
+        bullet.y += 7
+        if bullet.y >= HEIGHT:
+            boss_bullets.remove(bullet)
 def boss_attack_handler():
-    global  boss_attack, boss_attack_timer
+    global  boss_attack, boss_attack_timer, initialized_attack, attack_end, attack_number,\
+        bullet_fired, bullet_delay_timer, bullet_total
     if boss_attack:
-        boss_attack_timer = current_time
-        boss_attack = False
+        if not initialized_attack and not attack_end:
+            initialized_attack = True
+            attack_number = 1
+        if attack_number == 1 and initialized_attack:
+            if not bullet_fired:
+                bullet_fired = True
+                bullet = pygame.Rect(BOSS_HITBOX.x - BOSS_WIDTH/2 + 5, BOSS_HITBOX.y, 5, 10)
+                boss_bullets.append(bullet)
+                bullet_delay_timer = current_time
+                bullet_total += 1
+            else:aa
+                if bullet_total >= 5:
+                    attack_number = 6
+                    attack_end = True
+                    bullet_total = 0
+                if current_time - bullet_delay_timer >= BOSS_BULLET_DELAY:
+                    bullet_fired = False
+        if initialized_attack and attack_end:
+            boss_attack_timer = current_time
+            boss_attack = False
+            initialized_attack = False
+            attack_end = False
     if current_time - boss_attack_timer >= BOSS_ATTACK_DELAY and not boss_attack:
         boss_attack = True
-    
+
 def boss_health_manager():
     global boss_health, victory, boss_immunity, boss_immunity_timer
     if not boss_immunity:
@@ -286,6 +319,10 @@ def player_health_manager():
             player_health -= BOSS_CONTACT_DAMAGE
             player_immunity = True
             player_immunity_timer = current_time
+        for bullet in boss_bullets:
+            if bullet.colliderect(HITBOX):
+                player_health -= BULLET_DAMAGE
+                boss_bullets.remove(bullet)
     if current_time - player_immunity_timer >= IMMUNITY and player_immunity:
         player_immunity = False
 
@@ -293,9 +330,16 @@ def main():
     global run, Jump, decent, falling, initial_height, tele_up, current_time, tp_delay, \
         tele_left, tp_cooldown, tele_right, left, tp_hitbox, tp, boss_right, boss_health, \
         player_health, victory, player_immunity, player_immunity_timer, boss_immunity_timer,\
-        boss_immunity, boss_attack, boss_attack_timer
+        boss_immunity, boss_attack, boss_attack_timer, initialized_attack, attack_end,\
+        attack_number, bullet_fired, bullet_delay_timer, bullet_total
     location_reset()
+    bullet_total = 0
+    bullet_fired = False
+    attack_number = 6
+    attack_end = False
+    initialized_attack = False
     boss_attack_timer = 0
+    bullet_delay_timer = 99999999
     boss_attack = False
     boss_immunity_timer = 99999999
     boss_immunity = False
@@ -355,6 +399,7 @@ def main():
         teleport_movement()
         player_movements()
         boss_attack_handler()
+        boss_bullet_movement()
         boss_health_manager()
         player_health_manager()
         boss_movement()
