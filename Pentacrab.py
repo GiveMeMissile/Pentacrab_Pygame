@@ -61,7 +61,7 @@ BOSS_HITBOX = pygame.Rect(X - 50, BOSS_Y, BOSS_WIDTH, BOSS_HEIGHT)
 BOSS_MOVEMENT = 5
 BOSS_CONTACT_DAMAGE = 3
 BOSS_ATTACK_DELAY = 5000
-BOSS_BULLET_DELAY = 500
+BOSS_BULLET_DELAY = 250
 boss_bullets = []
 BULLET_DAMAGE = 1
 
@@ -279,12 +279,12 @@ def boss_attack_handler():
         if attack_number == 1 and initialized_attack:
             if not bullet_fired:
                 bullet_fired = True
-                bullet = pygame.Rect(BOSS_HITBOX.x - BOSS_WIDTH/2 + 5, BOSS_HITBOX.y, 5, 10)
+                bullet = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH/2 + 5, BOSS_HITBOX.y + BOSS_HEIGHT, 5, 10)
                 boss_bullets.append(bullet)
                 bullet_delay_timer = current_time
                 bullet_total += 1
             else:
-                if bullet_total >= 5:
+                if bullet_total >= 10:
                     attack_number = 6
                     attack_end = True
                     bullet_total = 0
