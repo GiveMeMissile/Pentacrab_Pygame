@@ -45,6 +45,8 @@ PLAYER_JUMP_LEFT = pygame.transform.flip(PLAYER_JUMP_RIGHT, flip_y=False, flip_x
 # Sounds
 JUMP_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Player_jump.mp3")
 TELEPORT_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Teleport.mp3")
+DAMAGE_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Damage1.mp3")
+BULLET_FIRE_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Bullet_fire.mp3")
 
 # Platform settings
 PLATFORM_HEIGHT = 60
@@ -59,11 +61,16 @@ BOSS_WIDTH, BOSS_HEIGHT = 100, 100
 BOSS_Y = 100
 BOSS_HITBOX = pygame.Rect(X - 50, BOSS_Y, BOSS_WIDTH, BOSS_HEIGHT)
 BOSS_MOVEMENT = 5
+
 BOSS_CONTACT_DAMAGE = 3
 BOSS_ATTACK_DELAY = 5000
+
 BOSS_BULLET_DELAY = 250
 boss_bullets = []
+boss_bullet_warning = []
 BULLET_DAMAGE = 1
+BULLET_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Bullet.png")), (20, 20))
+BULLET_WARNING_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Bullet_warning.png")), (30, 30))
 
 BOSS_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Pentacrab.png")), (BOSS_WIDTH + 40, BOSS_HEIGHT + 50))
 
@@ -88,9 +95,11 @@ def draw():
         WINDOW.blit(TELEPORT_SYMBOL, (portal_hitbox.x, portal_hitbox.y))
     
     WINDOW.blit(BOSS_IMAGE, (BOSS_HITBOX.x - 20, BOSS_HITBOX.y))
-
+    
+    for bullet_warning in boss_bullet_warning:
+        WINDOW.blit(BULLET_WARNING_IMAGE, (bullet_warning.x, bullet_warning.y))
     for bullet in boss_bullets:
-        pygame.draw.rect(WINDOW, (255, 0, 0), bullet)
+        WINDOW.blit(BULLET_IMAGE, (bullet.x, bullet.y))
 
     if not Jump:
         if left:
@@ -275,14 +284,18 @@ def boss_attack_handler():
     if boss_attack:
         if not initialized_attack and not attack_end:
             initialized_attack = True
-            attack_number = 1
+            attack_number = random.randint(1, 1)
         if attack_number == 1 and initialized_attack:
+            boss_bullet_warning.clear()
+            bullet_warning = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH/2 - 15, BOSS_HITBOX.y + BOSS_HEIGHT + 20, 30, 30)
+            boss_bullet_warning.append(bullet_warning)
             if not bullet_fired:
                 bullet_fired = True
-                bullet = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH/2 + 5, BOSS_HITBOX.y + BOSS_HEIGHT, 5, 10)
+                bullet = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH/2 - 10, BOSS_HITBOX.y + BOSS_HEIGHT + 20, 20, 20)
                 boss_bullets.append(bullet)
                 bullet_delay_timer = current_time
                 bullet_total += 1
+                BULLET_FIRE_SOUND.play()
             else:
                 if bullet_total >= 10:
                     attack_number = 6
@@ -295,6 +308,7 @@ def boss_attack_handler():
             boss_attack = False
             initialized_attack = False
             attack_end = False
+            boss_bullet_warning.clear()
     if current_time - boss_attack_timer >= BOSS_ATTACK_DELAY and not boss_attack:
         boss_attack = True
 
@@ -319,10 +333,14 @@ def player_health_manager():
             player_health -= BOSS_CONTACT_DAMAGE
             player_immunity = True
             player_immunity_timer = current_time
+            DAMAGE_SOUND.play()
         for bullet in boss_bullets:
             if bullet.colliderect(HITBOX):
+                player_immunity = True
                 player_health -= BULLET_DAMAGE
+                DAMAGE_SOUND.play()
                 boss_bullets.remove(bullet)
+                player_immunity_timer = current_time
     if current_time - player_immunity_timer >= IMMUNITY and player_immunity:
         player_immunity = False
 
