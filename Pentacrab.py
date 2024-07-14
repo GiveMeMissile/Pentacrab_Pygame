@@ -28,8 +28,10 @@ TELEPORT_AMOUNT = 500
 TP_DELAY = 500
 TP_COOLDOWN = 5500
 TELEPORT_WIDTH, TELEPORT_HEIGHT = HITBOX_HEIGHT + PLAYER_DIFFERENCE, HITBOX_HEIGHT + PLAYER_DIFFERENCE
+
 TELEPORT_SYMBOL = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Teleport.png")),
                                          (TELEPORT_WIDTH, TELEPORT_HEIGHT))
+TELEPORT_COOLDOWN = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Tp_cooldown.png")), (TELEPORT_WIDTH, TELEPORT_HEIGHT))
 
 X = WIDTH // 2
 Y = HEIGHT - HITBOX_HEIGHT
@@ -71,6 +73,7 @@ boss_bullet_warning = []
 BULLET_DAMAGE = 1
 BULLET_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Bullet.png")), (20, 20))
 BULLET_WARNING_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Bullet_warning.png")), (30, 30))
+BULLET_REDO = 1000
 
 BOSS_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Pentacrab.png")), (BOSS_WIDTH + 40, BOSS_HEIGHT + 50))
 
@@ -91,6 +94,9 @@ def draw():
     WINDOW.blit(player_health_text, (WIDTH - 350, 0))
     for platform_location_x, platform_location_y in platforms:
         WINDOW.blit(PLATFORM, (platform_location_x, platform_location_y))
+    
+    if tp_cooldown:
+        WINDOW.blit(TELEPORT_COOLDOWN, (HITBOX.x + PLAYER_DIFFERENCE - TELEPORT_WIDTH / 2,HITBOX.y - PLAYER_DIFFERENCE))
     for portal_hitbox in tp_hitbox:
         WINDOW.blit(TELEPORT_SYMBOL, (portal_hitbox.x, portal_hitbox.y))
     
@@ -280,7 +286,10 @@ def boss_bullet_movement():
             boss_bullets.remove(bullet)
 def boss_attack_handler():
     global  boss_attack, boss_attack_timer, initialized_attack, attack_end, attack_number,\
-        bullet_fired, bullet_delay_timer, bullet_total
+        bullet_fired, bullet_delay_timer, bullet_total, attack_redo, bullet_redo_delay, bullet_redo_timer
+    for bullet in boss_bullets:
+        if bullet.y == HEIGHT:
+            boss_bullets.remove(bullet)
     if boss_attack:
         if not initialized_attack and not attack_end:
             initialized_attack = True
@@ -289,7 +298,7 @@ def boss_attack_handler():
             boss_bullet_warning.clear()
             bullet_warning = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH/2 - 15, BOSS_HITBOX.y + BOSS_HEIGHT + 20, 30, 30)
             boss_bullet_warning.append(bullet_warning)
-            if not bullet_fired:
+            if not bullet_fired and not bullet_redo_delay:
                 bullet_fired = True
                 bullet = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH/2 - 10, BOSS_HITBOX.y + BOSS_HEIGHT + 20, 20, 20)
                 boss_bullets.append(bullet)
@@ -297,10 +306,18 @@ def boss_attack_handler():
                 bullet_total += 1
                 BULLET_FIRE_SOUND.play()
             else:
-                if bullet_total >= 10:
+                if current_time - bullet_delay_timer >= BULLET_REDO:
+                    bullet_redo_delay = False
+                if attack_redo >= 2 and bullet_total >= 10:
                     attack_number = 6
                     attack_end = True
+                    attack_redo = 0
                     bullet_total = 0
+                if bullet_total >= 10:
+                    bullet_total = 0
+                    attack_redo += 1
+                    bullet_redo_delay = True
+                    bullet_redo_timer = current_time
                 if current_time - bullet_delay_timer >= BOSS_BULLET_DELAY:
                     bullet_fired = False
         if initialized_attack and attack_end:
@@ -336,11 +353,9 @@ def player_health_manager():
             DAMAGE_SOUND.play()
         for bullet in boss_bullets:
             if bullet.colliderect(HITBOX):
-                player_immunity = True
                 player_health -= BULLET_DAMAGE
                 DAMAGE_SOUND.play()
                 boss_bullets.remove(bullet)
-                player_immunity_timer = current_time
     if current_time - player_immunity_timer >= IMMUNITY and player_immunity:
         player_immunity = False
 
@@ -349,8 +364,12 @@ def main():
         tele_left, tp_cooldown, tele_right, left, tp_hitbox, tp, boss_right, boss_health, \
         player_health, victory, player_immunity, player_immunity_timer, boss_immunity_timer,\
         boss_immunity, boss_attack, boss_attack_timer, initialized_attack, attack_end,\
-        attack_number, bullet_fired, bullet_delay_timer, bullet_total
+        attack_number, bullet_fired, bullet_delay_timer, bullet_total, attack_redo, bullet_redo_delay, \
+        bullet_redo_timer
     location_reset()
+    bullet_redo_delay = False
+    bullet_redo_timer = 99999999
+    attack_redo = 0
     bullet_total = 0
     bullet_fired = False
     attack_number = 6
