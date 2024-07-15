@@ -22,8 +22,8 @@ ACCELERATION = 1
 MAX_VELOCITY = 6
 FRICTION = 0.1
 PLAYER_DIFFERENCE = 15
-TELEPORT_DAMAGE = 5
 
+TELEPORT_DAMAGE = 5
 TELEPORT_AMOUNT = 500
 TP_DELAY = 500
 TP_COOLDOWN = 5500
@@ -32,6 +32,12 @@ TELEPORT_WIDTH, TELEPORT_HEIGHT = HITBOX_HEIGHT + PLAYER_DIFFERENCE, HITBOX_HEIG
 TELEPORT_SYMBOL = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Teleport.png")),
                                          (TELEPORT_WIDTH, TELEPORT_HEIGHT))
 TELEPORT_COOLDOWN = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Tp_cooldown.png")), (TELEPORT_WIDTH, TELEPORT_HEIGHT))
+
+AURA_DAMAGE = 15
+AURA_WIDTH = 200
+
+
+AURA_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Lightning_aura.png")), (AURA_WIDTH, HITBOX_HEIGHT + 20))
 
 X = WIDTH // 2
 Y = HEIGHT - HITBOX_HEIGHT
@@ -49,6 +55,7 @@ JUMP_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Player_jump.mp3")
 TELEPORT_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Teleport.mp3")
 DAMAGE_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Damage1.mp3")
 BULLET_FIRE_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Bullet_fire.mp3")
+ELECTRIC_AURA_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Electric_aura.wav")
 
 # Platform settings
 PLATFORM_HEIGHT = 60
@@ -284,6 +291,10 @@ def boss_bullet_movement():
         bullet.y += 7
         if bullet.y >= HEIGHT:
             boss_bullets.remove(bullet)
+
+def player_attack_handler():
+    e = 0
+
 def boss_attack_handler():
     global  boss_attack, boss_attack_timer, initialized_attack, attack_end, attack_number,\
         bullet_fired, bullet_delay_timer, bullet_total, attack_redo, bullet_redo_delay, bullet_redo_timer
@@ -365,8 +376,11 @@ def main():
         player_health, victory, player_immunity, player_immunity_timer, boss_immunity_timer,\
         boss_immunity, boss_attack, boss_attack_timer, initialized_attack, attack_end,\
         attack_number, bullet_fired, bullet_delay_timer, bullet_total, attack_redo, bullet_redo_delay, \
-        bullet_redo_timer
+        bullet_redo_timer, aura_cooldown, aura_attack, aura_cooldown_timer
     location_reset()
+    aura_cooldown_timer = 99999999
+    aura_cooldown = False
+    aura_attack = False
     bullet_redo_delay = False
     bullet_redo_timer = 99999999
     attack_redo = 0
@@ -425,6 +439,11 @@ def main():
                     tp_delay = current_time
                     tp_cooldown = True
                     TELEPORT_SOUND.play()
+                if event.key == pygame.K_e and not aura_cooldown:
+                    aura_attack = True
+                    aura_cooldown = True
+                    aura_cooldown_timer = current_time
+                    ELECTRIC_AURA_SOUND.play()
             if event.type == pygame.QUIT:
                 run = False
         falling = True
