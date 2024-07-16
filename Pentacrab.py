@@ -34,10 +34,13 @@ TELEPORT_SYMBOL = pygame.transform.scale(pygame.image.load(os.path.join("Pentacr
 TELEPORT_COOLDOWN = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Tp_cooldown.png")), (TELEPORT_WIDTH, TELEPORT_HEIGHT))
 
 AURA_DAMAGE = 15
-AURA_WIDTH = 200
+AURA_WIDTH = 400
+AURA_COOLDOWN = 10000
+AURA_PULSE_ON = 150
+AURA_PULSE_OFF = 200
+aura = []
 
-
-AURA_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Lightning_aura.png")), (AURA_WIDTH, HITBOX_HEIGHT + 20))
+AURA_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Lightning_aura.png")), (AURA_WIDTH, HITBOX_HEIGHT + 80))
 
 X = WIDTH // 2
 Y = HEIGHT - HITBOX_HEIGHT
@@ -113,6 +116,9 @@ def draw():
         WINDOW.blit(BULLET_WARNING_IMAGE, (bullet_warning.x, bullet_warning.y))
     for bullet in boss_bullets:
         WINDOW.blit(BULLET_IMAGE, (bullet.x, bullet.y))
+
+    for aura_hitbox in aura:
+        WINDOW.blit(AURA_IMAGE, (aura_hitbox.x, aura_hitbox.y))
 
     if not Jump:
         if left:
@@ -293,7 +299,32 @@ def boss_bullet_movement():
             boss_bullets.remove(bullet)
 
 def player_attack_handler():
-    e = 0
+    global aura_attack, aura_create, aura_cooldown, aura_cooldown_timer, aura_pulse_on,\
+        aura_pulse_off, aura_off
+    for aura_hitbox in aura:
+        aura_hitbox.x = (HITBOX.x - AURA_WIDTH/2 - 1)
+        aura_hitbox.y = HITBOX.y - 80
+    if aura_cooldown and current_time - aura_cooldown_timer >= AURA_COOLDOWN:
+        aura_cooldown = False
+    if aura_attack:
+        if not aura_create:
+            aura_hitbox = pygame.Rect(HITBOX.x - AURA_WIDTH/2 - 10, HITBOX.y - 80, AURA_WIDTH, HITBOX_HEIGHT + 80)
+            aura_create = True
+            aura.append(aura_hitbox)
+            aura_cooldown = True
+            aura_cooldown_timer = current_time
+            aura_pulse_on = current_time
+            aura_pulse_off = current_time
+            aura_off += 1
+        if current_time - aura_pulse_on >= AURA_PULSE_ON:
+            aura.clear()
+            if aura_off > + 3:
+                aura_attack = False
+                aura_off = 1
+        if current_time - aura_pulse_off >= AURA_PULSE_OFF:
+            aura_create = False
+
+
 
 def boss_attack_handler():
     global  boss_attack, boss_attack_timer, initialized_attack, attack_end, attack_number,\
@@ -347,7 +378,10 @@ def boss_health_manager():
         boss_immunity_timer = current_time
         for portal_hitbox in tp_hitbox:
             if BOSS_HITBOX.colliderect(portal_hitbox):
-                boss_health -= 5
+                boss_health -= TELEPORT_DAMAGE
+        for aura_hitbox in aura:
+            if BOSS_HITBOX.colliderect(aura_hitbox):
+                boss_health -= AURA_DAMAGE
     if current_time - boss_immunity_timer >= IMMUNITY:
         boss_immunity = False
     if boss_health <= 0:
@@ -376,8 +410,13 @@ def main():
         player_health, victory, player_immunity, player_immunity_timer, boss_immunity_timer,\
         boss_immunity, boss_attack, boss_attack_timer, initialized_attack, attack_end,\
         attack_number, bullet_fired, bullet_delay_timer, bullet_total, attack_redo, bullet_redo_delay, \
-        bullet_redo_timer, aura_cooldown, aura_attack, aura_cooldown_timer
+        bullet_redo_timer, aura_cooldown, aura_attack, aura_cooldown_timer, aura_create, \
+        aura_pulse_on, aura_pulse_off, aura_off
     location_reset()
+    aura_off = 1
+    aura_pulse_on = 99999999
+    aura_pulse_off = 99999999
+    aura_create = False
     aura_cooldown_timer = 99999999
     aura_cooldown = False
     aura_attack = False
@@ -456,6 +495,7 @@ def main():
         player_movements()
         boss_attack_handler()
         boss_bullet_movement()
+        player_attack_handler()
         boss_health_manager()
         player_health_manager()
         boss_movement()
