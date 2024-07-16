@@ -41,6 +41,7 @@ AURA_PULSE_OFF = 200
 aura = []
 
 AURA_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Lightning_aura.png")), (AURA_WIDTH, HITBOX_HEIGHT + 80))
+AURA_COOLDOWN_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Electic_pulse_cooldown.png")), (HITBOX_WIDTH, HITBOX_HEIGHT))
 
 X = WIDTH // 2
 Y = HEIGHT - HITBOX_HEIGHT
@@ -85,6 +86,11 @@ BULLET_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_
 BULLET_WARNING_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Bullet_warning.png")), (30, 30))
 BULLET_REDO = 1000
 
+BOSS_LASER_DAMAGE = 2
+boss_laser = []
+BOSS_LASER_ATTACK = 3000
+BOSS_LASER_COOLDOWN = 1500
+
 BOSS_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Pentacrab.png")), (BOSS_WIDTH + 40, BOSS_HEIGHT + 50))
 
 #other
@@ -119,7 +125,6 @@ def draw():
 
     for aura_hitbox in aura:
         WINDOW.blit(AURA_IMAGE, (aura_hitbox.x, aura_hitbox.y))
-
     if not Jump:
         if left:
             WINDOW.blit(PLAYER_LEFT, (HITBOX.x - 15, HITBOX.y - 15))
@@ -130,6 +135,8 @@ def draw():
             WINDOW.blit(PLAYER_JUMP_LEFT, (HITBOX.x - PLAYER_DIFFERENCE, HITBOX.y - PLAYER_DIFFERENCE))
         else:
             WINDOW.blit(PLAYER_JUMP_RIGHT, (HITBOX.x - PLAYER_DIFFERENCE, HITBOX.y - PLAYER_DIFFERENCE))
+    if aura_cooldown:
+        WINDOW.blit(AURA_COOLDOWN_IMAGE, (HITBOX.x, HITBOX.y))
     pygame.display.update()
 
 
@@ -297,6 +304,8 @@ def boss_bullet_movement():
         bullet.y += 7
         if bullet.y >= HEIGHT:
             boss_bullets.remove(bullet)
+        if bullet.y == HEIGHT:
+            boss_bullets.remove(bullet)
 
 def player_attack_handler():
     global aura_attack, aura_create, aura_cooldown, aura_cooldown_timer, aura_pulse_on,\
@@ -328,14 +337,12 @@ def player_attack_handler():
 
 def boss_attack_handler():
     global  boss_attack, boss_attack_timer, initialized_attack, attack_end, attack_number,\
-        bullet_fired, bullet_delay_timer, bullet_total, attack_redo, bullet_redo_delay, bullet_redo_timer
-    for bullet in boss_bullets:
-        if bullet.y == HEIGHT:
-            boss_bullets.remove(bullet)
+        bullet_fired, bullet_delay_timer, bullet_total, attack_redo, bullet_redo_delay,\
+        bullet_redo_timelaser_delay, laser_fire_time, laser_cooldown, laser_active, laser_start
     if boss_attack:
         if not initialized_attack and not attack_end:
             initialized_attack = True
-            attack_number = random.randint(1, 1)
+            attack_number = random.randint(1, 2)
         if attack_number == 1 and initialized_attack:
             boss_bullet_warning.clear()
             bullet_warning = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH/2 - 15, BOSS_HITBOX.y + BOSS_HEIGHT + 20, 30, 30)
@@ -362,6 +369,20 @@ def boss_attack_handler():
                     bullet_redo_timer = current_time
                 if current_time - bullet_delay_timer >= BOSS_BULLET_DELAY:
                     bullet_fired = False
+        if attack_number == 2 and initialized_attack:
+            if not laser_active:
+                boss_laser.clear()
+                laser_start = False
+                laser_active = True
+                laser_cooldown = current_time
+                laser_warning = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH/2 - 15, BOSS_HITBOX.y + BOSS_HEIGHT + 20, 30, 30)
+                boss_laser.append(laser_warning)
+            if laser_active and current_time - laser_cooldown >= BOSS_LASER_COOLDOWN and not laser_start:
+                laser_start = True
+                laser = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH/2 - 30, BOSS_HITBOX.y + BOSS_HEIGHT + 20, 60, HEIGHT)
+                boss_laser.append(laser)
+                laser_fire_time = current_time
+                
         if initialized_attack and attack_end:
             boss_attack_timer = current_time
             boss_attack = False
@@ -411,8 +432,13 @@ def main():
         boss_immunity, boss_attack, boss_attack_timer, initialized_attack, attack_end,\
         attack_number, bullet_fired, bullet_delay_timer, bullet_total, attack_redo, bullet_redo_delay, \
         bullet_redo_timer, aura_cooldown, aura_attack, aura_cooldown_timer, aura_create, \
-        aura_pulse_on, aura_pulse_off, aura_off
+        aura_pulse_on, aura_pulse_off, aura_off, laser_delay, laser_fire_time, laser_cooldown,\
+        laser_active, laser_start
     location_reset()
+    laser_start = False
+    laser_active = False
+    laser_fire_time = 99999999
+    laser_cooldown = 99999999
     aura_off = 1
     aura_pulse_on = 99999999
     aura_pulse_off = 99999999
@@ -503,6 +529,5 @@ def main():
             main()
         draw()
     pygame.quit()
-
 
 main()
