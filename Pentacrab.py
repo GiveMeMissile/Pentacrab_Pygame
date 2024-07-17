@@ -70,7 +70,7 @@ PLATFORM_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacra
 PLATFORM = pygame.transform.rotate(pygame.transform.scale(PLATFORM_IMAGE, (PLATFORM_WIDTH, PLATFORM_HEIGHT)), 180)
 
 # Boss settings
-BOSS_WIDTH, BOSS_HEIGHT = 100, 100
+BOSS_WIDTH, BOSS_HEIGHT = 100, 120
 BOSS_Y = 100
 BOSS_HITBOX = pygame.Rect(X - 50, BOSS_Y, BOSS_WIDTH, BOSS_HEIGHT)
 BOSS_MOVEMENT = 5
@@ -88,10 +88,13 @@ BULLET_REDO = 1000
 
 BOSS_LASER_DAMAGE = 2
 boss_laser = []
-BOSS_LASER_ATTACK = 3000
-BOSS_LASER_COOLDOWN = 1500
+BOSS_LASER_ATTACK = 1000
+BOSS_LASER_COOLDOWN = 500
 
-BOSS_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Pentacrab.png")), (BOSS_WIDTH + 40, BOSS_HEIGHT + 50))
+LASER_WARNING_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Energy_laser_warning.png")), (30, 30))
+LASER_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Boss_energy_laser.png")), (60, HEIGHT))
+
+BOSS_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Pentacrab.png")), (BOSS_WIDTH + 40, BOSS_HEIGHT + 30))
 
 #other
 HEALTH_FONT = pygame.font.SysFont("comicsans", 40)
@@ -122,6 +125,10 @@ def draw():
         WINDOW.blit(BULLET_WARNING_IMAGE, (bullet_warning.x, bullet_warning.y))
     for bullet in boss_bullets:
         WINDOW.blit(BULLET_IMAGE, (bullet.x, bullet.y))
+    for laser_warning in boss_laser:
+        WINDOW.blit(LASER_WARNING_IMAGE, (laser_warning.x, laser_warning.y))
+    for laser_hitbox in boss_laser:
+        WINDOW.blit(LASER_IMAGE, (laser_hitbox.x - 25, laser_hitbox.y))
 
     for aura_hitbox in aura:
         WINDOW.blit(AURA_IMAGE, (aura_hitbox.x, aura_hitbox.y))
@@ -299,13 +306,19 @@ def boss_movement():
     elif not victory:
         BOSS_HITBOX.x -= BOSS_MOVEMENT
 
-def boss_bullet_movement():
+def boss_attack_movement():
     for bullet in boss_bullets:
         bullet.y += 7
         if bullet.y >= HEIGHT:
             boss_bullets.remove(bullet)
         if bullet.y == HEIGHT:
             boss_bullets.remove(bullet)
+    for laser_hitbox in boss_laser:
+        laser_hitbox.x = BOSS_HITBOX.x + BOSS_WIDTH/2 - 10
+        laser_hitbox.y =  BOSS_HITBOX.y + BOSS_HEIGHT
+    for laser_warning in boss_laser:
+        laser_warning.x = BOSS_HITBOX.x + BOSS_WIDTH/2 - 15
+        laser_warning.y = BOSS_HITBOX.y + BOSS_HEIGHT
 
 def player_attack_handler():
     global aura_attack, aura_create, aura_cooldown, aura_cooldown_timer, aura_pulse_on,\
@@ -345,11 +358,11 @@ def boss_attack_handler():
             attack_number = random.randint(1, 2)
         if attack_number == 1 and initialized_attack:
             boss_bullet_warning.clear()
-            bullet_warning = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH/2 - 15, BOSS_HITBOX.y + BOSS_HEIGHT + 20, 30, 30)
+            bullet_warning = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH/2 - 15, BOSS_HITBOX.y + BOSS_HEIGHT, 30, 30)
             boss_bullet_warning.append(bullet_warning)
             if not bullet_fired and not bullet_redo_delay:
                 bullet_fired = True
-                bullet = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH/2 - 10, BOSS_HITBOX.y + BOSS_HEIGHT + 20, 20, 20)
+                bullet = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH/2 - 10, BOSS_HITBOX.y + BOSS_HEIGHT, 20, 20)
                 boss_bullets.append(bullet)
                 bullet_delay_timer = current_time
                 bullet_total += 1
@@ -375,14 +388,21 @@ def boss_attack_handler():
                 laser_start = False
                 laser_active = True
                 laser_cooldown = current_time
-                laser_warning = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH/2 - 15, BOSS_HITBOX.y + BOSS_HEIGHT + 20, 30, 30)
+                laser_warning = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH/2 - 15, BOSS_HITBOX.y + BOSS_HEIGHT, 30, 30)
                 boss_laser.append(laser_warning)
             if laser_active and current_time - laser_cooldown >= BOSS_LASER_COOLDOWN and not laser_start:
                 laser_start = True
-                laser = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH/2 - 30, BOSS_HITBOX.y + BOSS_HEIGHT + 20, 60, HEIGHT)
-                boss_laser.append(laser)
+                laser_hitbox = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH/2 - 10, BOSS_HITBOX.y + BOSS_HEIGHT, 20, HEIGHT)
+                boss_laser.append(laser_hitbox)
                 laser_fire_time = current_time
-                
+            if laser_start and current_time - laser_fire_time >= BOSS_LASER_ATTACK:
+                laser_active = False
+                attack_redo += 1
+                if attack_redo >= 3:
+                    attack_redo = 0
+                    boss_attack = False
+                    boss_laser.clear()
+
         if initialized_attack and attack_end:
             boss_attack_timer = current_time
             boss_attack = False
@@ -520,7 +540,7 @@ def main():
         teleport_movement()
         player_movements()
         boss_attack_handler()
-        boss_bullet_movement()
+        boss_attack_movement()
         player_attack_handler()
         boss_health_manager()
         player_health_manager()
