@@ -102,13 +102,13 @@ BOSS_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_As
 MINION_HEIGHT, MINION_WIDTH = 50, 60
 MINION_DAMAGE = 2
 MINION_RESPAWN_COOLDOWN = 5000
-MINION_HEALTH = 5
 
 MINION_ONE_HITBOX = pygame.Rect(0, HEIGHT - MINION_HEIGHT, MINION_WIDTH, MINION_HEIGHT)
 MINION_TWO_HITBOX = pygame.Rect(WIDTH - MINION_WIDTH, HEIGHT - MINION_HEIGHT, MINION_WIDTH, MINION_HEIGHT)
+
 MINION_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Pentacrab.png")), (MINION_WIDTH, MINION_HEIGHT))
-LEFT_MINION_IMAGE = pygame.transform.rotate(MINION_IMAGE, 90)
-RIGHT_MINION = pygame.transform.rotate(MINION_IMAGE, 270)
+RIGHT_MINION_IMAGE = pygame.transform.rotate(MINION_IMAGE, 90)
+LEFT_MINION_IMAGE = pygame.transform.rotate(MINION_IMAGE, 270)
 SUMMON_MINION_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Summoning_portal.png")), (MINION_HEIGHT, MINION_HEIGHT))
 
 #other
@@ -153,6 +153,22 @@ def draw():
         WINDOW.blit(LASER_IMAGE, (laser_hitbox.x - 180/2 + 10, laser_hitbox.y + 5))
     for laser_warning in boss_laser_warning:
         WINDOW.blit(LASER_WARNING_IMAGE, (laser_warning.x, laser_warning.y))
+
+    if minion_two_alive:
+        if minion_two_left:
+            WINDOW.blit(LEFT_MINION_IMAGE, (MINION_TWO_HITBOX.x, MINION_TWO_HITBOX.y))
+        if not minion_two_left:
+            WINDOW.blit(RIGHT_MINION_IMAGE, (MINION_TWO_HITBOX.x, MINION_TWO_HITBOX.y))
+    else:
+        WINDOW.blit(SUMMON_MINION_IMAGE, (MINION_TWO_HITBOX.x + 10, MINION_TWO_HITBOX.y))
+
+    if minion_one_alive:
+        if minion_one_right:
+            WINDOW.blit(RIGHT_MINION_IMAGE, (MINION_ONE_HITBOX.x, MINION_ONE_HITBOX.y))
+        if not minion_one_right:
+            WINDOW.blit(LEFT_MINION_IMAGE, (MINION_ONE_HITBOX.x, MINION_ONE_HITBOX.y))
+    else:
+        WINDOW.blit(SUMMON_MINION_IMAGE, (MINION_ONE_HITBOX.x, MINION_ONE_HITBOX.y))
 
     for aura_hitbox in aura:
         WINDOW.blit(AURA_IMAGE, (aura_hitbox.x, aura_hitbox.y))
@@ -435,13 +451,53 @@ def boss_attack_handler():
         boss_attack = True
 
 def minion_handler():
-    global minion_one_timer, minion_two_timer, minion_one_alive, minion_two_alive
+    global minion_one_timer, minion_two_timer, minion_one_alive, minion_two_alive,\
+        minion_two_left, minion_one_right
+    if victory:
+        minion_two_alive = False
+        minion_one_alive = False
     if current_time - minion_one_timer >= MINION_RESPAWN_COOLDOWN and not minion_one_alive:
         minion_one_alive = True
-    if current_time - minion_two_timer >= MINION_RESPAWN_COOLDOWN and not minion_one_alive:
+    if current_time - minion_two_timer >= MINION_RESPAWN_COOLDOWN and not minion_two_alive:
         minion_two_alive = True
-    if minion_two_alive:
-        e = 0
+    if minion_two_alive and not victory:
+        if minion_two_left:
+            MINION_TWO_HITBOX.x -= 5
+        if not minion_two_left:
+            MINION_TWO_HITBOX.x += 5
+        if MINION_TWO_HITBOX.x >= WIDTH - MINION_WIDTH:
+            minion_two_left = True
+        if MINION_TWO_HITBOX.x <= 0:
+            minion_two_left = False
+        for aura_hitbox in aura:
+            if aura_hitbox.colliderect(MINION_TWO_HITBOX):
+                minion_two_alive = False
+                minion_two_timer = current_time
+                MINION_TWO_HITBOX.x = WIDTH - MINION_WIDTH
+        for teleport_hitbox in tp_hitbox:
+            if teleport_hitbox.colliderect(MINION_TWO_HITBOX):
+                minion_two_alive = False
+                minion_two_timer = current_time
+                MINION_TWO_HITBOX.x = WIDTH - MINION_WIDTH
+    if minion_one_alive and not victory:
+        if minion_one_right:
+            MINION_ONE_HITBOX.x += 5
+        if not minion_one_right:
+            MINION_ONE_HITBOX.x -= 5
+        if MINION_ONE_HITBOX.x <= 0:
+            minion_one_right = True
+        if MINION_ONE_HITBOX.x >= WIDTH - MINION_WIDTH:
+            minion_one_right = False
+        for aura_hitbox in aura:
+            if aura_hitbox.colliderect(MINION_ONE_HITBOX):
+                minion_one_alive = False
+                minion_one_timer = current_time
+                MINION_ONE_HITBOX.x = 0
+        for teleport_hitbox in tp_hitbox:
+            if teleport_hitbox.colliderect(MINION_ONE_HITBOX):
+                minion_one_alive = False
+                minion_one_timer = current_time
+                MINION_ONE_HITBOX.x = 0
 
 def boss_health_manager():
     global boss_health, victory, boss_immunity, boss_immunity_timer
@@ -464,7 +520,7 @@ def boss_health_manager():
 
 def player_health_manager():
     global player_health, player_immunity, player_immunity_timer
-    if not player_immunity:
+    if not player_immunity and not victory:
         if HITBOX.colliderect(BOSS_HITBOX):
             player_health -= BOSS_CONTACT_DAMAGE
             player_immunity = True
@@ -481,6 +537,11 @@ def player_health_manager():
                 player_health -= BOSS_LASER_DAMAGE
                 DAMAGE_SOUND.play()
                 player_immunity_timer = current_time
+        if MINION_TWO_HITBOX.colliderect(HITBOX):
+            player_immunity = True
+            player_health -= 2
+            DAMAGE_SOUND.play()
+            player_immunity_timer = current_time
     if current_time - player_immunity_timer >= IMMUNITY and player_immunity:
         player_immunity = False
 
@@ -493,8 +554,10 @@ def main():
         bullet_redo_timer, aura_cooldown, aura_attack, aura_cooldown_timer, aura_create, \
         aura_pulse_on, aura_pulse_off, aura_off, laser_delay, laser_fire_time,\
         laser_active, laser_start, minion_one_timer, minion_two_timer, minion_one_alive, \
-        minion_two_alive
+        minion_two_alive, minion_two_left, minion_one_right
     reset()
+    minion_one_right = True
+    minion_two_left = True
     minion_one_timer = 0
     minion_two_timer = 0
     minion_one_alive = False
@@ -585,6 +648,7 @@ def main():
         boss_attack_handler()
         boss_attack_movement()
         player_attack_handler()
+        minion_handler()
         boss_health_manager()
         player_health_manager()
         boss_movement()
