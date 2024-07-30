@@ -154,20 +154,20 @@ def draw():
     for laser_warning in boss_laser_warning:
         WINDOW.blit(LASER_WARNING_IMAGE, (laser_warning.x, laser_warning.y))
 
-    if minion_two_alive:
+    if minion_two_alive and not victory:
         if minion_two_left:
             WINDOW.blit(LEFT_MINION_IMAGE, (MINION_TWO_HITBOX.x, MINION_TWO_HITBOX.y))
         if not minion_two_left:
             WINDOW.blit(RIGHT_MINION_IMAGE, (MINION_TWO_HITBOX.x, MINION_TWO_HITBOX.y))
-    else:
+    elif not victory:
         WINDOW.blit(SUMMON_MINION_IMAGE, (MINION_TWO_HITBOX.x + 10, MINION_TWO_HITBOX.y))
 
-    if minion_one_alive:
+    if minion_one_alive and not victory:
         if minion_one_right:
             WINDOW.blit(RIGHT_MINION_IMAGE, (MINION_ONE_HITBOX.x, MINION_ONE_HITBOX.y))
         if not minion_one_right:
             WINDOW.blit(LEFT_MINION_IMAGE, (MINION_ONE_HITBOX.x, MINION_ONE_HITBOX.y))
-    else:
+    elif not victory:
         WINDOW.blit(SUMMON_MINION_IMAGE, (MINION_ONE_HITBOX.x, MINION_ONE_HITBOX.y))
 
     for aura_hitbox in aura:
