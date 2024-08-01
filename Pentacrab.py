@@ -33,25 +33,25 @@ TELEPORT_SYMBOL = pygame.transform.scale(pygame.image.load(os.path.join("Pentacr
                                          (TELEPORT_WIDTH, TELEPORT_HEIGHT))
 TELEPORT_COOLDOWN = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Tp_cooldown.png")), (TELEPORT_WIDTH, TELEPORT_HEIGHT))
 
-LIGHTNING_BULLET_DAMAGE = 2
+LIGHTNING_BOLT_DAMAGE = 2
 LIGHTNING_WIDTH, LIGHTNING_HEIGHT = 10, 40
 LIGHTNING_DELAY = 1500
 LIGHTNING_MAX = 10
 LIGHTNING_REFRESH = 3000
-lightning_bullet_up = []
-lightning_bullet_down = []
-lightning_bullet_left = []
-lightning_bullet_right = []
+lightning_bolt_up = []
+lightning_bolt_down = []
+lightning_bolt_left = []
+lightning_bolt_right = []
 
-LIGHTNING_BULLET_IMAGE_UP = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Lightning_blast.png")), (LIGHTNING_WIDTH, LIGHTNING_HEIGHT))
-LIGHTNING_BULLET_IMAGE_DOWN = pygame.transform.flip(LIGHTNING_BULLET_IMAGE_UP, flip_y=True, flip_x=False)
-LIGHTNING_BULLET_IMAGE_RIGHT = pygame.transform.rotate(LIGHTNING_BULLET_IMAGE_UP, 90)
-LIGHTNING_BULLET_IMAGE_LEFT = pygame.transform.flip(LIGHTNING_BULLET_IMAGE_RIGHT, flip_y=False, flip_x=True)
+LIGHTNING_BOLT_IMAGE_UP = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Lightning_blast.png")), (LIGHTNING_WIDTH, LIGHTNING_HEIGHT))
+LIGHTNING_BOLT_IMAGE_DOWN = pygame.transform.flip(LIGHTNING_BOLT_IMAGE_UP, flip_y=True, flip_x=False)
+LIGHTNING_BOLT_IMAGE_RIGHT = pygame.transform.rotate(LIGHTNING_BOLT_IMAGE_UP, 90)
+LIGHTNING_BOLT_IMAGE_LEFT = pygame.transform.flip(LIGHTNING_BOLT_IMAGE_RIGHT, flip_y=False, flip_x=True)
 
-INDICATOR_IMAGE_UP = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Directional_indicator.png")), (20, 60))
+INDICATOR_IMAGE_UP = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Directional_indicator.png")), (20, 40))
 INDICATOR_IMAGE_DOWN = pygame.transform.flip(INDICATOR_IMAGE_UP, flip_y=True, flip_x=False)
-INDICATOR_IMAGE_RIGHT = pygame.transform.rotate(INDICATOR_IMAGE_UP, 90)
-INDICATOR_IMAGE_LEFT = pygame.transform.flip(INDICATOR_IMAGE_RIGHT, flip_y=False, flip_x=True)
+INDICATOR_IMAGE_LEFT = pygame.transform.rotate(INDICATOR_IMAGE_UP, 90)
+INDICATOR_IMAGE_RIGHT = pygame.transform.flip(INDICATOR_IMAGE_LEFT, flip_y=False, flip_x=True)
 
 AURA_DAMAGE = 10
 AURA_WIDTH = 400
@@ -158,7 +158,16 @@ def draw():
 
     for platform_location_x, platform_location_y in platforms:
         WINDOW.blit(PLATFORM, (platform_location_x, platform_location_y))
-    
+
+    if lightning_up:
+        WINDOW.blit(INDICATOR_IMAGE_UP, (HITBOX.x, HITBOX.y - 70))
+    elif lightning_down:
+        WINDOW.blit(INDICATOR_IMAGE_DOWN, (HITBOX.x, HITBOX.y + HITBOX_HEIGHT))
+    elif lightning_right:
+        WINDOW.blit(INDICATOR_IMAGE_RIGHT, (HITBOX.x + 40, HITBOX.y + 20))
+    elif lightning_left:
+        WINDOW.blit(INDICATOR_IMAGE_LEFT, (HITBOX.x - 20, HITBOX.y + 20))
+
     if tp_cooldown:
         WINDOW.blit(TELEPORT_COOLDOWN, (HITBOX.x + PLAYER_DIFFERENCE - TELEPORT_WIDTH / 2,HITBOX.y - PLAYER_DIFFERENCE))
     for portal_hitbox in tp_hitbox:
@@ -377,7 +386,8 @@ def boss_attack_movement():
 
 def player_attack_handler():
     global aura_attack, aura_create, aura_cooldown, aura_cooldown_timer, aura_pulse_on,\
-        aura_pulse_off, aura_off
+        aura_pulse_off, aura_off, lightning_activate, attack_cooldown, attack_cooldown_timer
+    #aura attack
     for aura_hitbox in aura:
         aura_hitbox.x = (HITBOX.x - AURA_WIDTH/2 - 1)
         aura_hitbox.y = HITBOX.y - 80
@@ -401,6 +411,11 @@ def player_attack_handler():
         if current_time - aura_pulse_off >= AURA_PULSE_OFF:
             aura_create = False
 
+    #lightning bolt attack
+    if lightning_activate:
+        lightning_activate = False
+        attack_cooldown = True
+        attack_cooldown_timer = current_time
 
 def boss_attack_handler():
     global  boss_attack, boss_attack_timer, initialized_attack, attack_end, attack_number,\
@@ -581,10 +596,10 @@ def main():
         lightning_activate
     reset()
     lightning_activate = False
-    lightning_up = True
+    lightning_up = False
     lightning_right = False
     lightning_left = False
-    lightning_down = False
+    lightning_down = True
     lightning_cooldown_timer = 99999999
     lightning_cooldown = False
     minion_one_right = True
@@ -646,6 +661,7 @@ def main():
                 if event.key == pygame.K_w and not Jump and not falling:
                     Jump = True
                     JUMP_SOUND.play()
+
                 if event.key == pygame.K_UP and not tp_cooldown:
                     tele_up = True
                     tp_delay = current_time
@@ -661,37 +677,52 @@ def main():
                     tp_delay = current_time
                     tp_cooldown = True
                     TELEPORT_SOUND.play()
+
                 if event.key == pygame.K_e and not aura_cooldown:
                     aura_attack = True
                     aura_cooldown = True
                     aura_cooldown_timer = current_time
                     ELECTRIC_AURA_SOUND.play()
+
                 if event.key == pygame.K_LCTRL:
-                    if lightning_up:
-                        lightning_up = False
-                        lightning_left = True
-                    if lightning_left:
+                    indicator_change = False
+                    if lightning_down and not indicator_change:
+                        lightning_down = False
+                        lightning_right = True
+                        indicator_change = True
+                    if lightning_left and not indicator_change:
                         lightning_left = False
                         lightning_down = True
-                    if lightning_down:
-                        lightning_down = False
-                        lightning_right = True
-                    if lightning_right:
+                        indicator_change = True
+                    if lightning_right and not indicator_change:
                         lightning_right = False
                         lightning_up = True
+                        indicator_change = True
+                    if lightning_up and not indicator_change:
+                        lightning_up = False
+                        lightning_left = True
+
                 if event.key == pygame.K_RCTRL:
-                    if lightning_up:
+                    indicator_change = False
+                    if lightning_up and not indicator_change:
                         lightning_up = False
                         lightning_right = True
-                    if lightning_right:
+                        indicator_change = True
+                    if lightning_right and not indicator_change:
                         lightning_right = False
                         lightning_down = True
-                    if lightning_down:
+                        indicator_change = True
+                    if lightning_down and not indicator_change:
                         lightning_down = False
                         lightning_left = True
-                    if lightning_left:
-                        lightning_left = True
-                        lightning_up
+                        indicator_change = True
+                    if lightning_left and not indicator_change:
+                        lightning_left = False
+                        lightning_up = True
+
+                if event.key == pygame.K_SPACE and not lightning_cooldown:
+                    lightning_activate = True
+
             if event.type == pygame.QUIT:
                 run = False
         falling = True
