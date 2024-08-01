@@ -34,7 +34,7 @@ TELEPORT_SYMBOL = pygame.transform.scale(pygame.image.load(os.path.join("Pentacr
 TELEPORT_COOLDOWN = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Tp_cooldown.png")), (TELEPORT_WIDTH, TELEPORT_HEIGHT))
 
 LIGHTNING_BOLT_DAMAGE = 2
-LIGHTNING_WIDTH, LIGHTNING_HEIGHT = 10, 40
+LIGHTNING_WIDTH, LIGHTNING_HEIGHT = 15, 60
 LIGHTNING_DELAY = 1500
 LIGHTNING_MAX = 10
 LIGHTNING_REFRESH = 3000
@@ -166,7 +166,7 @@ def draw():
     elif lightning_right:
         WINDOW.blit(INDICATOR_IMAGE_RIGHT, (HITBOX.x + 40, HITBOX.y + 20))
     elif lightning_left:
-        WINDOW.blit(INDICATOR_IMAGE_LEFT, (HITBOX.x - 20, HITBOX.y + 20))
+        WINDOW.blit(INDICATOR_IMAGE_LEFT, (HITBOX.x - 50, HITBOX.y + 20))
 
     if tp_cooldown:
         WINDOW.blit(TELEPORT_COOLDOWN, (HITBOX.x + PLAYER_DIFFERENCE - TELEPORT_WIDTH / 2,HITBOX.y - PLAYER_DIFFERENCE))
@@ -416,7 +416,19 @@ def player_attack_handler():
         lightning_activate = False
         attack_cooldown = True
         attack_cooldown_timer = current_time
-
+        if lightning_up:
+            lightning_hitbot_up = pygame.Rect(HITBOX.x + 2.5, HITBOX.y + 20, LIGHTNING_WIDTH, LIGHTNING_HEIGHT)
+            lightning_bolt_up.append(lightning_hitbot_up)
+        if lightning_down:
+            lightning_hitbot_down = pygame.Rect(HITBOX.y + 2.5, HITBOX.y - HITBOX_HEIGHT, LIGHTNING_WIDTH, LIGHTNING_HEIGHT)
+            lightning_bolt_down.append(lightning_hitbot_down)
+        if lightning_right:
+            lightning_hitbot_right = pygame.Rect(HITBOX.x + 40, HITBOX.y + 20, LIGHTNING_WIDTH, LIGHTNING_HEIGHT)
+            lightning_bolt_right.append(lightning_hitbot_right)
+        if lightning_left:
+            lightning_hitbot_left = pygame.Rect(HITBOX.x - 50, HITBOX.y + 20, LIGHTNING_WIDTH, LIGHTNING_HEIGHT)
+            lightning_bolt_left.append(lightning_hitbot_left)
+            
 def boss_attack_handler():
     global  boss_attack, boss_attack_timer, initialized_attack, attack_end, attack_number,\
         bullet_fired, bullet_delay_timer, bullet_total, attack_redo, bullet_redo_delay,\
