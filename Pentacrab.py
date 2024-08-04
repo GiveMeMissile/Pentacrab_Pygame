@@ -35,7 +35,7 @@ TELEPORT_COOLDOWN = pygame.transform.scale(pygame.image.load(os.path.join("Penta
 
 LIGHTNING_BOLT_DAMAGE = 2
 LIGHTNING_WIDTH, LIGHTNING_HEIGHT = 15, 60
-LIGHTNING_DELAY = 1500
+LIGHTNING_DELAY = 500
 LIGHTNING_MAX = 10
 LIGHTNING_REFRESH = 3000
 lightning_bolt_up = []
@@ -167,6 +167,15 @@ def draw():
         WINDOW.blit(INDICATOR_IMAGE_RIGHT, (HITBOX.x + 40, HITBOX.y + 20))
     elif lightning_left:
         WINDOW.blit(INDICATOR_IMAGE_LEFT, (HITBOX.x - 50, HITBOX.y + 20))
+
+    for lightning_hitbox_up in lightning_bolt_up:
+        WINDOW.blit(LIGHTNING_BOLT_IMAGE_UP, (lightning_hitbox_up.x, lightning_hitbox_up.y))
+    for lightning_hitbox_left in lightning_bolt_left:
+        WINDOW.blit(LIGHTNING_BOLT_IMAGE_LEFT, (lightning_hitbox_left.x, lightning_hitbox_left.y))
+    for lightning_hitbox_right in lightning_bolt_right:
+        WINDOW.blit(LIGHTNING_BOLT_IMAGE_RIGHT, (lightning_hitbox_right.x, lightning_hitbox_right.y))
+    for lightning_hitbox_down in lightning_bolt_down:
+        WINDOW.blit(LIGHTNING_BOLT_IMAGE_DOWN, (lightning_hitbox_down.x, lightning_hitbox_down.y))
 
     if tp_cooldown:
         WINDOW.blit(TELEPORT_COOLDOWN, (HITBOX.x + PLAYER_DIFFERENCE - TELEPORT_WIDTH / 2,HITBOX.y - PLAYER_DIFFERENCE))
@@ -379,14 +388,16 @@ def boss_attack_movement():
             boss_bullets.remove(bullet)
     for laser_hitbox in boss_laser_hitbox:
         laser_hitbox.x = BOSS_HITBOX.x + BOSS_WIDTH/2 - 10
-        laser_hitbox.y =  BOSS_HITBOX.y + BOSS_HEIGHT
+        laser_hitbox.y = BOSS_HITBOX.y + BOSS_HEIGHT
     for laser_warning in boss_laser_warning:
         laser_warning.x = BOSS_HITBOX.x + BOSS_WIDTH/2 - 15
         laser_warning.y = BOSS_HITBOX.y + BOSS_HEIGHT
 
 def player_attack_handler():
     global aura_attack, aura_create, aura_cooldown, aura_cooldown_timer, aura_pulse_on,\
-        aura_pulse_off, aura_off, lightning_activate, attack_cooldown, attack_cooldown_timer
+        aura_pulse_off, aura_off, lightning_activate, lightning_cooldown,\
+        lightning_cooldown_timer
+
     #aura attack
     for aura_hitbox in aura:
         aura_hitbox.x = (HITBOX.x - AURA_WIDTH/2 - 1)
@@ -414,13 +425,13 @@ def player_attack_handler():
     #lightning bolt attack
     if lightning_activate:
         lightning_activate = False
-        attack_cooldown = True
-        attack_cooldown_timer = current_time
+        lightning_cooldown = True
+        lightning_cooldown_timer = current_time
         if lightning_up:
-            lightning_hitbot_up = pygame.Rect(HITBOX.x + 2.5, HITBOX.y + 20, LIGHTNING_WIDTH, LIGHTNING_HEIGHT)
+            lightning_hitbot_up = pygame.Rect(HITBOX.x + 2.5, HITBOX.y - LIGHTNING_HEIGHT - 20, LIGHTNING_WIDTH, LIGHTNING_HEIGHT)
             lightning_bolt_up.append(lightning_hitbot_up)
         if lightning_down:
-            lightning_hitbot_down = pygame.Rect(HITBOX.y + 2.5, HITBOX.y - HITBOX_HEIGHT, LIGHTNING_WIDTH, LIGHTNING_HEIGHT)
+            lightning_hitbot_down = pygame.Rect(HITBOX.x + 2.5, HITBOX.y + HITBOX_HEIGHT, LIGHTNING_WIDTH, LIGHTNING_HEIGHT)
             lightning_bolt_down.append(lightning_hitbot_down)
         if lightning_right:
             lightning_hitbot_right = pygame.Rect(HITBOX.x + 40, HITBOX.y + 20, LIGHTNING_WIDTH, LIGHTNING_HEIGHT)
@@ -428,7 +439,26 @@ def player_attack_handler():
         if lightning_left:
             lightning_hitbot_left = pygame.Rect(HITBOX.x - 50, HITBOX.y + 20, LIGHTNING_WIDTH, LIGHTNING_HEIGHT)
             lightning_bolt_left.append(lightning_hitbot_left)
-            
+
+    if current_time - lightning_cooldown_timer >= LIGHTNING_DELAY:
+        lightning_cooldown = False
+    for lightning_hitbot_up in lightning_bolt_up:
+        lightning_hitbot_up.y -= 10
+        if lightning_hitbot_up.y <= 0 - LIGHTNING_HEIGHT:
+            lightning_bolt_up.remove(lightning_hitbot_up)
+    for lightning_hitbot_right in lightning_bolt_right:
+        lightning_hitbot_right.x += 10
+        if lightning_hitbot_right.x >= WIDTH:
+            lightning_bolt_right.remove(lightning_hitbot_right)
+    for lightning_hitbot_left in lightning_bolt_left:
+        lightning_hitbot_left.x -= 10
+        if lightning_hitbot_left.x <= 0:
+            lightning_bolt_left.remove(lightning_hitbot_left)
+    for lightning_hitbot_down in lightning_bolt_down:
+        lightning_hitbot_down.y += 10
+        if lightning_hitbot_down.y >= HEIGHT:
+            lightning_bolt_down.remove(lightning_hitbot_down )
+
 def boss_attack_handler():
     global  boss_attack, boss_attack_timer, initialized_attack, attack_end, attack_number,\
         bullet_fired, bullet_delay_timer, bullet_total, attack_redo, bullet_redo_delay,\
@@ -521,13 +551,28 @@ def minion_handler():
         for aura_hitbox in aura:
             if aura_hitbox.colliderect(MINION_TWO_HITBOX):
                 minion_two_alive = False
-                minion_two_timer = current_time
-                MINION_TWO_HITBOX.x = WIDTH - MINION_WIDTH
         for teleport_hitbox in tp_hitbox:
             if teleport_hitbox.colliderect(MINION_TWO_HITBOX):
                 minion_two_alive = False
-                minion_two_timer = current_time
-                MINION_TWO_HITBOX.x = WIDTH - MINION_WIDTH
+        for lightning_hitbox_left in lightning_bolt_left:
+            if lightning_hitbox_left.colliderect(MINION_TWO_HITBOX):
+                minion_two_alive = False
+                lightning_bolt_left.remove(lightning_hitbox_left)
+        for lightning_hitbox_down in lightning_bolt_down:
+            if lightning_hitbox_down.colliderect(MINION_TWO_HITBOX):
+                minion_two_alive = False
+                lightning_bolt_down.remove(lightning_hitbox_down)
+        for lightning_hitbox_right in lightning_bolt_right:
+            if lightning_hitbox_right.colliderect(MINION_TWO_HITBOX):
+                minion_two_alive = False
+                lightning_bolt_right.remove(lightning_hitbox_right)
+        for lightning_hitbox_up in lightning_bolt_up:
+            if lightning_hitbox_up.colliderect(MINION_TWO_HITBOX):
+                minion_two_alive = False
+                lightning_bolt_up.remove(lightning_hitbox_up)
+        if not minion_two_alive:
+            minion_two_timer = current_time
+            MINION_TWO_HITBOX.x = WIDTH - MINION_WIDTH
     if minion_one_alive and not victory:
         if minion_one_right:
             MINION_ONE_HITBOX.x += 5
@@ -540,13 +585,28 @@ def minion_handler():
         for aura_hitbox in aura:
             if aura_hitbox.colliderect(MINION_ONE_HITBOX):
                 minion_one_alive = False
-                minion_one_timer = current_time
-                MINION_ONE_HITBOX.x = 0
         for teleport_hitbox in tp_hitbox:
             if teleport_hitbox.colliderect(MINION_ONE_HITBOX):
                 minion_one_alive = False
-                minion_one_timer = current_time
-                MINION_ONE_HITBOX.x = 0
+        for lightning_hitbox_left in lightning_bolt_left:
+            if lightning_hitbox_left.colliderect(MINION_ONE_HITBOX):
+                minion_one_alive = False
+                lightning_bolt_left.remove(lightning_hitbox_left)
+        for lightning_hitbox_down in lightning_bolt_down:
+            if lightning_hitbox_down.colliderect(MINION_ONE_HITBOX):
+                minion_one_alive = False
+                lightning_bolt_down.remove(lightning_hitbox_down)
+        for lightning_hitbox_right in lightning_bolt_right:
+            if lightning_hitbox_right.colliderect(MINION_ONE_HITBOX):
+                minion_one_alive = False
+                lightning_bolt_right.remove(lightning_hitbox_right)
+        for lightning_hitbox_up in lightning_bolt_up:
+            if lightning_hitbox_up.colliderect(MINION_ONE_HITBOX):
+                minion_one_alive = False
+                lightning_bolt_up.remove(lightning_hitbox_up)
+        if not minion_one_alive:
+            minion_one_timer = current_time
+            MINION_ONE_HITBOX.x = 0
 
 def boss_health_manager():
     global boss_health, victory, boss_immunity, boss_immunity_timer
@@ -561,6 +621,30 @@ def boss_health_manager():
                 boss_health -= AURA_DAMAGE
                 boss_immunity = True
                 boss_immunity_timer = current_time
+        for lightning_hitbox_up in lightning_bolt_up:
+            if BOSS_HITBOX.colliderect(lightning_hitbox_up):
+                boss_health -= LIGHTNING_BOLT_DAMAGE
+                boss_immunity = True
+                boss_immunity_timer = current_time
+                lightning_bolt_up.remove(lightning_hitbox_up)
+        for lightning_hitbox_down in lightning_bolt_down:
+            if BOSS_HITBOX.colliderect(lightning_hitbox_down):
+                boss_health -= LIGHTNING_BOLT_DAMAGE
+                boss_immunity = True
+                boss_immunity_timer = current_time
+                lightning_bolt_down.remove(lightning_hitbox_down)
+        for lightning_hitbox_right in lightning_bolt_right:
+            if BOSS_HITBOX.colliderect(lightning_hitbox_right):
+                boss_health -= LIGHTNING_BOLT_DAMAGE
+                boss_immunity = True
+                boss_immunity_timer = current_time
+                lightning_bolt_right.remove(lightning_hitbox_right)
+        for lightning_hitbox_left in lightning_bolt_left:
+            if BOSS_HITBOX.colliderect(lightning_hitbox_left):
+                boss_health -= LIGHTNING_BOLT_DAMAGE
+                boss_immunity = True
+                boss_immunity_timer = current_time
+                lightning_bolt_left.remove(lightning_hitbox_left)
     if current_time - boss_immunity_timer >= IMMUNITY:
         boss_immunity = False
     if boss_health <= 0:
@@ -608,10 +692,10 @@ def main():
         lightning_activate
     reset()
     lightning_activate = False
-    lightning_up = False
+    lightning_up = True
     lightning_right = False
     lightning_left = False
-    lightning_down = True
+    lightning_down = False
     lightning_cooldown_timer = 99999999
     lightning_cooldown = False
     minion_one_right = True
