@@ -33,9 +33,10 @@ TELEPORT_SYMBOL = pygame.transform.scale(pygame.image.load(os.path.join("Pentacr
                                          (TELEPORT_WIDTH, TELEPORT_HEIGHT))
 TELEPORT_COOLDOWN = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Tp_cooldown.png")), (TELEPORT_WIDTH, TELEPORT_HEIGHT))
 
-LIGHTNING_BOLT_DAMAGE = 2
+LIGHTNING_BOLT_DAMAGE = 1
+LIGHTNING_MOVEMENT_SPEED = 12
 LIGHTNING_WIDTH, LIGHTNING_HEIGHT = 15, 60
-LIGHTNING_DELAY = 500
+LIGHTNING_DELAY = 400
 LIGHTNING_MAX = 10
 LIGHTNING_REFRESH = 3000
 lightning_bolt_up = []
@@ -81,6 +82,7 @@ DAMAGE_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Damage1.mp3")
 BULLET_FIRE_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Bullet_fire.mp3")
 ELECTRIC_AURA_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Electric_aura.wav")
 LASER_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Boss_laser_sound.wav")
+LIGHTNING_BOLT_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Lightning_bolt_sound.wav")
 
 # Platform settings
 PLATFORM_HEIGHT = 60
@@ -443,19 +445,19 @@ def player_attack_handler():
     if current_time - lightning_cooldown_timer >= LIGHTNING_DELAY:
         lightning_cooldown = False
     for lightning_hitbot_up in lightning_bolt_up:
-        lightning_hitbot_up.y -= 10
+        lightning_hitbot_up.y -= LIGHTNING_MOVEMENT_SPEED
         if lightning_hitbot_up.y <= 0 - LIGHTNING_HEIGHT:
             lightning_bolt_up.remove(lightning_hitbot_up)
     for lightning_hitbot_right in lightning_bolt_right:
-        lightning_hitbot_right.x += 10
+        lightning_hitbot_right.x += LIGHTNING_MOVEMENT_SPEED
         if lightning_hitbot_right.x >= WIDTH:
             lightning_bolt_right.remove(lightning_hitbot_right)
     for lightning_hitbot_left in lightning_bolt_left:
-        lightning_hitbot_left.x -= 10
+        lightning_hitbot_left.x -= LIGHTNING_MOVEMENT_SPEED
         if lightning_hitbot_left.x <= 0:
             lightning_bolt_left.remove(lightning_hitbot_left)
     for lightning_hitbot_down in lightning_bolt_down:
-        lightning_hitbot_down.y += 10
+        lightning_hitbot_down.y += LIGHTNING_MOVEMENT_SPEED
         if lightning_hitbot_down.y >= HEIGHT:
             lightning_bolt_down.remove(lightning_hitbot_down )
 
@@ -672,7 +674,12 @@ def player_health_manager():
                 player_immunity_timer = current_time
         if MINION_TWO_HITBOX.colliderect(HITBOX):
             player_immunity = True
-            player_health -= 2
+            player_health -= MINION_DAMAGE
+            DAMAGE_SOUND.play()
+            player_immunity_timer = current_time
+        if MINION_ONE_HITBOX.colliderect(HITBOX):
+            player_immunity = True
+            player_health -= MINION_DAMAGE
             DAMAGE_SOUND.play()
             player_immunity_timer = current_time
     if current_time - player_immunity_timer >= IMMUNITY and player_immunity:
@@ -817,6 +824,7 @@ def main():
                         lightning_up = True
 
                 if event.key == pygame.K_SPACE and not lightning_cooldown:
+                    LIGHTNING_BOLT_SOUND.play()
                     lightning_activate = True
 
             if event.type == pygame.QUIT:
