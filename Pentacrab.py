@@ -23,7 +23,7 @@ ACCELERATION = 1
 MAX_VELOCITY = 6
 FRICTION = 0.1
 PLAYER_DIFFERENCE = 15
-
+PLAYER_HEALTH_X, PLAYER_HEALTH_Y = 650, 80
 
 TELEPORT_DAMAGE = 5
 TELEPORT_AMOUNT = 500
@@ -110,7 +110,7 @@ BOSS_Y = 100
 BOSS_HITBOX = pygame.Rect(X - 50, BOSS_Y, BOSS_WIDTH, BOSS_HEIGHT)
 BOSS_MOVEMENT = 5
 BOSS_HEALTH = 200
-BOSS_HEALTH_X, BOSS_HEALTH_Y = WIDTH/4, 25
+BOSS_HEALTH_X, BOSS_HEALTH_Y = WIDTH/4, 40
 boss_health_points = []
 
 BOSS_CONTACT_DAMAGE = 3
@@ -149,9 +149,9 @@ LEFT_MINION_IMAGE = pygame.transform.rotate(MINION_IMAGE, 270)
 SUMMON_MINION_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Summoning_portal.png")), (MINION_HEIGHT, MINION_HEIGHT))
 
 #other
-HEALTH_FONT = pygame.font.SysFont("comicsans", 40)
+HEALTH_FONT = pygame.font.SysFont("Times New Roman", 40)
 IMMUNITY = 500
-HEALTH_POINT_WIDTH, HEALTH_POINT_HEIGHT = 3, 10
+HEALTH_POINT_WIDTH, HEALTH_POINT_HEIGHT = 3.375, 10
 RED = (255, 100, 100)
 
 def reset():
@@ -167,7 +167,7 @@ def reset():
     aura.clear()
     boss_health_x = BOSS_HEALTH_X
     for _ in range(boss_health):
-        boss_health_point = pygame.Rect(boss_health_x, BOSS_HEALTH_Y, HEALTH_SPAGHETTI_WIDTH, HEALTH_POINT_HEIGHT)
+        boss_health_point = pygame.Rect(boss_health_x, BOSS_HEALTH_Y, HEALTH_POINT_WIDTH, HEALTH_POINT_HEIGHT)
         boss_health_x += HEALTH_POINT_WIDTH
         boss_health_points.append(boss_health_point)
 
@@ -175,7 +175,7 @@ def draw():
     WINDOW.blit(BACKGROUND, (0, 0))
     boss_health_text = HEALTH_FONT.render("Boss Health: " + str(boss_health), 1, (255, 255, 255 ))
     player_health_text = HEALTH_FONT.render("Player Health: " + str(player_health), 1, (255, 255, 255))
-    WINDOW.blit(boss_health_text, (0, 0))
+    WINDOW.blit(boss_health_text, (WIDTH/2 - 110, 0))
     WINDOW.blit(player_health_text, (WIDTH - 350, 0))
 
     for boss_health_point in boss_health_points:
@@ -669,10 +669,10 @@ def boss_health_manager():
                 lightning_bolt_left.remove(lightning_hitbox_left)
         if boss_immunity:
             boss_immunity_timer = current_time
-            boss_health_points.clear()k
+            boss_health_points.clear()
             boss_health_x = BOSS_HEALTH_X
             for _ in range(boss_health):
-                boss_health_point = pygame.Rect(boss_health_x, BOSS_HEALTH_Y, HEALTH_SPAGHETTI_WIDTH,
+                boss_health_point = pygame.Rect(boss_health_x, BOSS_HEALTH_Y, HEALTH_POINT_WIDTH,
                                                 HEALTH_POINT_HEIGHT)
                 boss_health_x += HEALTH_POINT_WIDTH
                 boss_health_points.append(boss_health_point)
