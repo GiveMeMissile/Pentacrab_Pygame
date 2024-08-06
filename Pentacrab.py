@@ -15,6 +15,7 @@ FPS = 60
 # Player settings
 JUMP_HEIGHT = 70
 JUMP_SLOW = 30
+PLAYER_HEALTH = 30
 GRAVITY = 7
 HITBOX_WIDTH, HITBOX_HEIGHT = 20, 70
 velocity = 0
@@ -22,6 +23,7 @@ ACCELERATION = 1
 MAX_VELOCITY = 6
 FRICTION = 0.1
 PLAYER_DIFFERENCE = 15
+
 
 TELEPORT_DAMAGE = 5
 TELEPORT_AMOUNT = 500
@@ -107,6 +109,9 @@ BOSS_WIDTH, BOSS_HEIGHT = 100, 120
 BOSS_Y = 100
 BOSS_HITBOX = pygame.Rect(X - 50, BOSS_Y, BOSS_WIDTH, BOSS_HEIGHT)
 BOSS_MOVEMENT = 5
+BOSS_HEALTH = 200
+BOSS_HEALTH_X, BOSS_HEALTH_Y = WIDTH/4, 25
+boss_health_points = []
 
 BOSS_CONTACT_DAMAGE = 3
 BOSS_ATTACK_DELAY = 5000
@@ -146,6 +151,8 @@ SUMMON_MINION_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pen
 #other
 HEALTH_FONT = pygame.font.SysFont("comicsans", 40)
 IMMUNITY = 500
+HEALTH_POINT_WIDTH, HEALTH_POINT_HEIGHT = 3, 10
+RED = (255, 100, 100)
 
 def reset():
     global attack_end, attack_redo
@@ -153,13 +160,16 @@ def reset():
     HITBOX.y = HEIGHT - HITBOX_HEIGHT
     BOSS_HITBOX.x = WIDTH/2 - BOSS_WIDTH/2
     BOSS_HITBOX.y = BOSS_Y
-    attack_end = True
-    attack_redo = 0
     boss_laser_warning.clear()
     boss_laser_hitbox.clear()
     boss_bullets.clear()
     boss_bullet_warning.clear()
     aura.clear()
+    boss_health_x = BOSS_HEALTH_X
+    for _ in range(boss_health):
+        boss_health_point = pygame.Rect(boss_health_x, BOSS_HEALTH_Y, HEALTH_SPAGHETTI_WIDTH, HEALTH_POINT_HEIGHT)
+        boss_health_x += HEALTH_POINT_WIDTH
+        boss_health_points.append(boss_health_point)
 
 def draw():
     WINDOW.blit(BACKGROUND, (0, 0))
@@ -167,6 +177,9 @@ def draw():
     player_health_text = HEALTH_FONT.render("Player Health: " + str(player_health), 1, (255, 255, 255))
     WINDOW.blit(boss_health_text, (0, 0))
     WINDOW.blit(player_health_text, (WIDTH - 350, 0))
+
+    for boss_health_point in boss_health_points:
+        pygame.draw.rect(WINDOW, RED, boss_health_point)
 
     for platform_location_x, platform_location_y in platforms:
         WINDOW.blit(PLATFORM, (platform_location_x, platform_location_y))
@@ -624,42 +637,46 @@ def minion_handler():
             MINION_ONE_HITBOX.x = 0
 
 def boss_health_manager():
-    global boss_health, victory, boss_immunity, boss_immunity_timer
+    global boss_health, victory, boss_immunity, boss_immunity_timer, boss_health_change
     if not boss_immunity:
         for portal_hitbox in tp_hitbox:
             if BOSS_HITBOX.colliderect(portal_hitbox):
                 boss_health -= TELEPORT_DAMAGE
                 boss_immunity = True
-                boss_immunity_timer = current_time
         for aura_hitbox in aura:
             if BOSS_HITBOX.colliderect(aura_hitbox):
                 boss_health -= AURA_DAMAGE
                 boss_immunity = True
-                boss_immunity_timer = current_time
         for lightning_hitbox_up in lightning_bolt_up:
             if BOSS_HITBOX.colliderect(lightning_hitbox_up):
                 boss_health -= LIGHTNING_BOLT_DAMAGE
                 boss_immunity = True
-                boss_immunity_timer = current_time
                 lightning_bolt_up.remove(lightning_hitbox_up)
         for lightning_hitbox_down in lightning_bolt_down:
             if BOSS_HITBOX.colliderect(lightning_hitbox_down):
                 boss_health -= LIGHTNING_BOLT_DAMAGE
                 boss_immunity = True
-                boss_immunity_timer = current_time
                 lightning_bolt_down.remove(lightning_hitbox_down)
         for lightning_hitbox_right in lightning_bolt_right:
             if BOSS_HITBOX.colliderect(lightning_hitbox_right):
                 boss_health -= LIGHTNING_BOLT_DAMAGE
                 boss_immunity = True
-                boss_immunity_timer = current_time
                 lightning_bolt_right.remove(lightning_hitbox_right)
         for lightning_hitbox_left in lightning_bolt_left:
             if BOSS_HITBOX.colliderect(lightning_hitbox_left):
                 boss_health -= LIGHTNING_BOLT_DAMAGE
                 boss_immunity = True
-                boss_immunity_timer = current_time
                 lightning_bolt_left.remove(lightning_hitbox_left)
+        if boss_immunity:
+            boss_immunity_timer = current_time
+            boss_health_points.clear()k
+            boss_health_x = BOSS_HEALTH_X
+            for _ in range(boss_health):
+                boss_health_point = pygame.Rect(boss_health_x, BOSS_HEALTH_Y, HEALTH_SPAGHETTI_WIDTH,
+                                                HEALTH_POINT_HEIGHT)
+                boss_health_x += HEALTH_POINT_WIDTH
+                boss_health_points.append(boss_health_point)
+
     if current_time - boss_immunity_timer >= IMMUNITY:
         boss_immunity = False
     if boss_health <= 0:
@@ -731,7 +748,6 @@ def main():
         lightning_left, lightning_right, lightning_cooldown, lightning_cooldown_timer, \
         lightning_activate, spaghetti_cooldown, spaghetti_x, spaghetti_y, spaghetti_activate, \
         spaghetti_cooldown_timer
-    reset()
     spaghetti_cooldown_timer = 99999999
     spaghetti_x = 0
     spaghetti_y = 0
@@ -777,8 +793,8 @@ def main():
     player_immunity = False
     victory = False
     boss_right = True
-    boss_health = 200
-    player_health = 30
+    boss_health = BOSS_HEALTH
+    player_health = PLAYER_HEALTH
     tp_hitbox = []
     tp = False
     tp_delay = 99999999
@@ -793,6 +809,7 @@ def main():
     platforms.clear()
     initial_height = HEIGHT - HITBOX_HEIGHT
     setup_platforms()
+    reset()
     run = True
     clock = pygame.time.Clock()
     while run:
