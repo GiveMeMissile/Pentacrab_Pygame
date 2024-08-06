@@ -83,6 +83,16 @@ BULLET_FIRE_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Bullet_fire.mp3")
 ELECTRIC_AURA_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Electric_aura.wav")
 LASER_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Boss_laser_sound.wav")
 LIGHTNING_BOLT_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Lightning_bolt_sound.wav")
+SPAGHETTI_EAT_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Heal_sound_effect.mp3")
+
+#Health Spaghetti
+HEALTH_SPAGHETTI_WIDTH, HEALTH_SPAGHETTI_HEIGHT = 80, 60
+HEALTH_GAIN = 3
+HEALTH_SPAGHETTI_COOLDOWN = 30000
+HEALTH_SPAGHETTI_MAX = 3
+Health_spaghetti = []
+
+HEALTH_SPAGHETTI_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Health_spaghetti.png")), (HEALTH_SPAGHETTI_WIDTH, HEALTH_SPAGHETTI_HEIGHT))
 
 # Platform settings
 PLATFORM_HEIGHT = 60
@@ -178,6 +188,9 @@ def draw():
         WINDOW.blit(LIGHTNING_BOLT_IMAGE_RIGHT, (lightning_hitbox_right.x, lightning_hitbox_right.y))
     for lightning_hitbox_down in lightning_bolt_down:
         WINDOW.blit(LIGHTNING_BOLT_IMAGE_DOWN, (lightning_hitbox_down.x, lightning_hitbox_down.y))
+
+    for spaghetti_hitbox in Health_spaghetti:
+        WINDOW.blit(HEALTH_SPAGHETTI_IMAGE, (spaghetti_hitbox.x, spaghetti_hitbox.y))
 
     if tp_cooldown:
         WINDOW.blit(TELEPORT_COOLDOWN, (HITBOX.x + PLAYER_DIFFERENCE - TELEPORT_WIDTH / 2,HITBOX.y - PLAYER_DIFFERENCE))
@@ -682,8 +695,28 @@ def player_health_manager():
             player_health -= MINION_DAMAGE
             DAMAGE_SOUND.play()
             player_immunity_timer = current_time
+        for spaghetti_hitbox in Health_spaghetti:
+            if HITBOX.colliderect(spaghetti_hitbox):
+                player_health += HEALTH_GAIN
+                Health_spaghetti.remove(spaghetti_hitbox)
+                SPAGHETTI_EAT_SOUND.play()
     if current_time - player_immunity_timer >= IMMUNITY and player_immunity:
         player_immunity = False
+
+def health_spaghetti_handler():
+    global spaghetti_cooldown, spaghetti_x, spaghetti_y, spaghetti_activate, spaghetti_cooldown_timer
+    if not spaghetti_activate and not spaghetti_cooldown:
+        spaghetti_cooldown = True
+        spaghetti_cooldown_timer = current_time
+    if current_time - spaghetti_cooldown_timer >= HEALTH_SPAGHETTI_COOLDOWN:
+        spaghetti_activate = True
+        spaghetti_cooldown = False
+    if spaghetti_activate and len(Health_spaghetti) <= 3:
+        spaghetti_x = random.randint(0, WIDTH - HEALTH_SPAGHETTI_WIDTH)
+        spaghetti_y = random.randint(BOSS_Y, HEIGHT - HEALTH_SPAGHETTI_HEIGHT)
+        spaghetti_hitbox = pygame.Rect(spaghetti_x, spaghetti_y, HEALTH_SPAGHETTI_WIDTH, HEALTH_SPAGHETTI_HEIGHT)
+        Health_spaghetti.append(spaghetti_hitbox)
+        spaghetti_activate = False
 
 def main():
     global run, Jump, decent, falling, initial_height, tele_up, current_time, tp_delay, \
@@ -696,8 +729,14 @@ def main():
         laser_active, laser_start, minion_one_timer, minion_two_timer, minion_one_alive, \
         minion_two_alive, minion_two_left, minion_one_right, lightning_up, lightning_down, \
         lightning_left, lightning_right, lightning_cooldown, lightning_cooldown_timer, \
-        lightning_activate
+        lightning_activate, spaghetti_cooldown, spaghetti_x, spaghetti_y, spaghetti_activate, \
+        spaghetti_cooldown_timer
     reset()
+    spaghetti_cooldown_timer = 99999999
+    spaghetti_x = 0
+    spaghetti_y = 0
+    spaghetti_cooldown = False
+    spaghetti_activate = False
     lightning_activate = False
     lightning_up = True
     lightning_right = False
@@ -841,6 +880,7 @@ def main():
         boss_attack_movement()
         player_attack_handler()
         minion_handler()
+        health_spaghetti_handler()
         boss_health_manager()
         player_health_manager()
         boss_movement()
