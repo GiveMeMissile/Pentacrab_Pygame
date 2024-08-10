@@ -415,14 +415,20 @@ def teleport_visual():
 
 def boss_movement():
     global boss_right, boss_health, victory
-    if BOSS_HITBOX.x >= WIDTH - BOSS_WIDTH:
-        boss_right = False
-    if BOSS_HITBOX.x <= 0:
-        boss_right = True
-    if boss_right and not victory:
-        BOSS_HITBOX.x += BOSS_MOVEMENT
-    elif not victory:
-        BOSS_HITBOX.x -= BOSS_MOVEMENT
+    if not boss_dive_attack:
+        if BOSS_HITBOX.x >= WIDTH - BOSS_WIDTH:
+            boss_right = False
+        if BOSS_HITBOX.x <= 0:
+            boss_right = True
+        if boss_right and not victory:
+            BOSS_HITBOX.x += BOSS_MOVEMENT
+        elif not victory:
+            BOSS_HITBOX.x -= BOSS_MOVEMENT
+    if boss_dive_attack and current_time - boss_dive_timer <= BOSS_DIVE_COOLDOWN:
+        if HITBOX.x > BOSS_HITBOX.x:
+            BOSS_HITBOX.x += BOSS_MOVEMENT
+        elif HITBOX.x < BOSS_HITBOX.x:
+            BOSS_HITBOX.x -= BOSS_MOVEMENT
 
 def boss_attack_movement():
     for bullet in boss_bullets:
@@ -678,7 +684,7 @@ def minion_handler():
 
 def boss_health_manager():
     global boss_health, victory, boss_immunity, boss_immunity_timer, boss_health_change \
-        , boss_attack_number
+        , boss_attack_number, attack_number, initialized_attack
     if not boss_immunity:
         for portal_hitbox in tp_hitbox:
             if BOSS_HITBOX.colliderect(portal_hitbox):
@@ -717,8 +723,10 @@ def boss_health_manager():
                                                 HEALTH_POINT_HEIGHT)
                 boss_health_x += HEALTH_POINT_WIDTH
                 boss_health_points.append(boss_health_point)
-    if boss_health <= 150 and boss_attack_number <= 2:
+    if boss_health <= 150 and boss_attack_number <= 2 and not boss_attack:
         boss_attack_number = 3
+        initialized_attack = True
+        attack_number = 3
 
     if current_time - boss_immunity_timer >= IMMUNITY:
         boss_immunity = False
@@ -728,7 +736,7 @@ def boss_health_manager():
 
 def player_health_manager():
     global player_health, player_immunity, player_immunity_timer
-    if not player_immunity and not victory:
+    if not player_immunity:
         if HITBOX.colliderect(BOSS_HITBOX):
             player_health -= BOSS_CONTACT_DAMAGE
             player_immunity = True
