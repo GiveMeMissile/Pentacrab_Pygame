@@ -25,7 +25,6 @@ FRICTION = 0.1
 PLAYER_DIFFERENCE = 15
 PLAYER_HEALTH_X, PLAYER_HEALTH_Y = 450, 80
 player_health_points = []
-HEALTH_POINT_ADDITION = 11.625
 
 TELEPORT_DAMAGE = 5
 TELEPORT_AMOUNT = 500
@@ -111,7 +110,7 @@ BOSS_WIDTH, BOSS_HEIGHT = 100, 120
 BOSS_Y = 100
 BOSS_HITBOX = pygame.Rect(X - 50, BOSS_Y, BOSS_WIDTH, BOSS_HEIGHT)
 BOSS_MOVEMENT = 5
-BOSS_HEALTH = 200
+BOSS_HEALTH = 300
 BOSS_HEALTH_X, BOSS_HEALTH_Y = WIDTH/4, 40
 boss_health_points = []
 
@@ -158,7 +157,8 @@ SUMMON_MINION_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pen
 #other
 HEALTH_FONT = pygame.font.SysFont("Times New Roman", 40)
 IMMUNITY = 500
-HEALTH_POINT_WIDTH, HEALTH_POINT_HEIGHT = 3.375, 10
+HEALTH_POINT_WIDTH, HEALTH_POINT_HEIGHT = (WIDTH/2)/BOSS_HEALTH, 10
+HEALTH_POINT_ADDITION = (WIDTH/3)/PLAYER_HEALTH
 RED = (255, 100, 100)
 BLUE = (0, 0, 255)
 
@@ -180,8 +180,8 @@ def reset():
         boss_health_points.append(boss_health_point)
     player_health_x = PLAYER_HEALTH_X
     for _ in range(player_health):
-        player_health_point = pygame.Rect(player_health_x, PLAYER_HEALTH_Y, HEALTH_POINT_WIDTH + HEALTH_POINT_ADDITION, HEALTH_POINT_HEIGHT)
-        player_health_x += HEALTH_POINT_WIDTH + HEALTH_POINT_ADDITION
+        player_health_point = pygame.Rect(player_health_x, PLAYER_HEALTH_Y, HEALTH_POINT_ADDITION, HEALTH_POINT_HEIGHT)
+        player_health_x += HEALTH_POINT_ADDITION
         player_health_points.append(player_health_point)
 
 def draw():
@@ -723,7 +723,7 @@ def boss_health_manager():
                                                 HEALTH_POINT_HEIGHT)
                 boss_health_x += HEALTH_POINT_WIDTH
                 boss_health_points.append(boss_health_point)
-    if boss_health <= 150 and boss_attack_number <= 2 and not boss_attack:
+    if boss_health <= BOSS_HEALTH - BOSS_HEALTH/6 and boss_attack_number <= 2 and not boss_attack:
         boss_attack_number = 3
         initialized_attack = True
         attack_number = 3
@@ -742,7 +742,7 @@ def player_health_manager():
             player_immunity = True
             DAMAGE_SOUND.play()
         for bullet in boss_bullets:
-            if bullet.colliderect(HITBOX):
+            if bullet.colliderect(HITBOX) and not victory:
                 player_health -= BULLET_DAMAGE
                 DAMAGE_SOUND.play()
                 boss_bullets.remove(bullet)
@@ -750,20 +750,20 @@ def player_health_manager():
                 player_health_x = PLAYER_HEALTH_X
                 player_health_points.clear()
                 for _ in range(player_health):
-                    player_health_point = pygame.Rect(player_health_x, PLAYER_HEALTH_Y,
-                                                      HEALTH_POINT_WIDTH + HEALTH_POINT_ADDITION, HEALTH_POINT_HEIGHT)
-                    player_health_x += HEALTH_POINT_WIDTH + HEALTH_POINT_ADDITION
+                    player_health_point = pygame.Rect(player_health_x, PLAYER_HEALTH_Y, HEALTH_POINT_ADDITION,
+                                                      HEALTH_POINT_HEIGHT)
+                    player_health_x += HEALTH_POINT_ADDITION
                     player_health_points.append(player_health_point)
         for laser_hitbox in boss_laser_hitbox:
-            if laser_hitbox.colliderect(HITBOX):
+            if laser_hitbox.colliderect(HITBOX) and not victory:
                 player_immunity = True
                 player_health -= BOSS_LASER_DAMAGE
                 DAMAGE_SOUND.play()
-        if MINION_TWO_HITBOX.colliderect(HITBOX):
+        if MINION_TWO_HITBOX.colliderect(HITBOX) and not victory:
             player_immunity = True
             player_health -= MINION_DAMAGE
             DAMAGE_SOUND.play()
-        if MINION_ONE_HITBOX.colliderect(HITBOX):
+        if MINION_ONE_HITBOX.colliderect(HITBOX) and not victory:
             player_immunity = True
             player_health -= MINION_DAMAGE
             DAMAGE_SOUND.play()
@@ -775,18 +775,18 @@ def player_health_manager():
                 player_health_x = PLAYER_HEALTH_X
                 player_health_points.clear()
                 for _ in range(player_health):
-                    player_health_point = pygame.Rect(player_health_x, PLAYER_HEALTH_Y,
-                                                      HEALTH_POINT_WIDTH + HEALTH_POINT_ADDITION, HEALTH_POINT_HEIGHT)
-                    player_health_x += HEALTH_POINT_WIDTH + HEALTH_POINT_ADDITION
+                    player_health_point = pygame.Rect(player_health_x, PLAYER_HEALTH_Y, HEALTH_POINT_ADDITION,
+                                                      HEALTH_POINT_HEIGHT)
+                    player_health_x += HEALTH_POINT_ADDITION
                     player_health_points.append(player_health_point)
         if player_immunity:
             player_immunity_timer = current_time
             player_health_x = PLAYER_HEALTH_X
             player_health_points.clear()
             for _ in range(player_health):
-                player_health_point = pygame.Rect(player_health_x, PLAYER_HEALTH_Y,
-                                                  HEALTH_POINT_WIDTH + HEALTH_POINT_ADDITION, HEALTH_POINT_HEIGHT)
-                player_health_x += HEALTH_POINT_WIDTH + HEALTH_POINT_ADDITION
+                player_health_point = pygame.Rect(player_health_x, PLAYER_HEALTH_Y, HEALTH_POINT_ADDITION,
+                                                  HEALTH_POINT_HEIGHT)
+                player_health_x += HEALTH_POINT_ADDITION
                 player_health_points.append(player_health_point)
     if current_time - player_immunity_timer >= IMMUNITY and player_immunity:
         player_immunity = False
