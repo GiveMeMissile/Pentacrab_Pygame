@@ -121,6 +121,7 @@ BOSS_BULLET_DELAY = 250
 boss_bullets = []
 boss_bullet_warning = []
 BULLET_DAMAGE = 1
+BULLET_SPEED = 7
 BULLET_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Bullet.png")), (20, 20))
 BULLET_WARNING_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Bullet_warning.png")), (30, 30))
 BULLET_REDO = 1000
@@ -139,7 +140,16 @@ BOSS_DIVE_COOLDOWN = 1000
 
 BOSS_DIVE_WARNING = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Boss_dive_attack_warning.png")), (BOSS_WIDTH, BOSS_HEIGHT))
 
+BOSS_SIDE_ATTACK_DELAY = 500
+right_bullets = []
+left_bullets = []
+
+RIGHT_BULLET_IMAGE = pygame.transform.rotate(BULLET_IMAGE, 90)
+LEFT_BULLET_IMAGE = pygame.transform.rotate(BULLET_IMAGE, 270)
+
 BOSS_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Pentacrab.png")), (BOSS_WIDTH + 40, BOSS_HEIGHT + 30))
+BOSS_IMAGE_RIGHT = pygame.transform.rotate(BOSS_IMAGE, 90)
+BOSS_IMAGE_LEFT = pygame.transform.rotate(BOSS_IMAGE, 270)
 
 #Boss Minions
 MINION_HEIGHT, MINION_WIDTH = 50, 60
@@ -432,7 +442,7 @@ def boss_movement():
 
 def boss_attack_movement():
     for bullet in boss_bullets:
-        bullet.y += 7
+        bullet.y += BULLET_SPEED
         if bullet.y >= HEIGHT:
             boss_bullets.remove(bullet)
         if bullet.y == HEIGHT:
@@ -514,7 +524,8 @@ def boss_attack_handler():
     global  boss_attack, boss_attack_timer, initialized_attack, attack_end, attack_number,\
         bullet_fired, bullet_delay_timer, bullet_total, attack_redo, bullet_redo_delay,\
         bullet_redo_timelaser_delay, laser_fire_time, laser_active, laser_start,\
-        boss_attack_number, boss_dive_attack, boss_dive_timer, dive_start, boss_dive_down
+        boss_attack_number, boss_dive_attack, boss_dive_timer, dive_start, boss_dive_down, \
+        boss_side_timer, boss_side_right, boss_side_attack
     if boss_attack and not victory:
 
         if not initialized_attack and not attack_end:
@@ -568,6 +579,7 @@ def boss_attack_handler():
                 attack_end = True
                 boss_laser_hitbox.clear()
 
+        #Boss dive attack
         if attack_number == 3 and initialized_attack:
             if not dive_start:
                 boss_dive_attack = True
@@ -590,8 +602,14 @@ def boss_attack_handler():
                 dive_start = False
                 boss_dive_down = False
                 boss_dive_attack = False
+                
+        if attack_number == 4:
+            if BOSS_HITBOX.x >= 0:
+                boss_side_right = True
+                boss_side_attack = True
+                attack_number = 3
 
-
+        #End boss attack
         if initialized_attack and attack_end:
             boss_attack_timer = current_time
             boss_attack = False
@@ -727,6 +745,10 @@ def boss_health_manager():
         boss_attack_number = 3
         initialized_attack = True
         attack_number = 3
+    if boss_health <= BOSS_HEALTH - BOSS_HEALTH/3 and boss_attack_number <= 3 and not boss_attack:
+        boss_attack_number = 4
+        initialized_attack = True
+        attack_number = 4
 
     if current_time - boss_immunity_timer >= IMMUNITY:
         boss_immunity = False
@@ -819,7 +841,10 @@ def main():
         lightning_left, lightning_right, lightning_cooldown, lightning_cooldown_timer, \
         lightning_activate, spaghetti_cooldown, spaghetti_x, spaghetti_y, spaghetti_activate, \
         spaghetti_cooldown_timer, boss_attack_number, boss_dive_attack, boss_dive_timer, \
-        dive_start, boss_dive_down
+        dive_start, boss_dive_down, boss_side_timer, boss_side_right, boss_side_attack
+    boss_side_right = False
+    boss_side_attack = False
+    boss_side_timer = 99999999
     boss_dive_down = False
     dive_start = False
     boss_dive_timer = 99999999
@@ -982,5 +1007,5 @@ def main():
             main()
         draw()
     pygame.quit()
-
-main()
+if __name__ == "__main__":
+    main()
