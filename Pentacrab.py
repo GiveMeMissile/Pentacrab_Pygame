@@ -425,7 +425,7 @@ def teleport_visual():
 
 def boss_movement():
     global boss_right, boss_health, victory
-    if not boss_dive_attack:
+    if not boss_dive_attack and not laser_active:
         if BOSS_HITBOX.x >= WIDTH - BOSS_WIDTH:
             boss_right = False
         if BOSS_HITBOX.x <= 0:
@@ -434,10 +434,10 @@ def boss_movement():
             BOSS_HITBOX.x += BOSS_MOVEMENT
         elif not victory:
             BOSS_HITBOX.x -= BOSS_MOVEMENT
-    if boss_dive_attack and current_time - boss_dive_timer <= BOSS_DIVE_COOLDOWN:
-        if HITBOX.x > BOSS_HITBOX.x:
+    if (boss_dive_attack and current_time - boss_dive_timer <= BOSS_DIVE_COOLDOWN) or (boss_tracking == True and laser_active):
+        if HITBOX.x > BOSS_HITBOX.x + BOSS_WIDTH/2:
             BOSS_HITBOX.x += BOSS_MOVEMENT
-        elif HITBOX.x < BOSS_HITBOX.x:
+        elif HITBOX.x < BOSS_HITBOX.x + BOSS_WIDTH/2:
             BOSS_HITBOX.x -= BOSS_MOVEMENT
 
 def boss_attack_movement():
@@ -525,7 +525,7 @@ def boss_attack_handler():
         bullet_fired, bullet_delay_timer, bullet_total, attack_redo, bullet_redo_delay,\
         bullet_redo_timelaser_delay, laser_fire_time, laser_active, laser_start,\
         boss_attack_number, boss_dive_attack, boss_dive_timer, dive_start, boss_dive_down, \
-        boss_side_timer, boss_side_right, boss_side_attack
+        boss_side_timer, boss_side_right, boss_side_attack, boss_tracking
     if boss_attack and not victory:
 
         if not initialized_attack and not attack_end:
@@ -602,7 +602,7 @@ def boss_attack_handler():
                 dive_start = False
                 boss_dive_down = False
                 boss_dive_attack = False
-                
+
         if attack_number == 4:
             if BOSS_HITBOX.x >= 0:
                 boss_side_right = True
@@ -702,7 +702,7 @@ def minion_handler():
 
 def boss_health_manager():
     global boss_health, victory, boss_immunity, boss_immunity_timer, boss_health_change \
-        , boss_attack_number, attack_number, initialized_attack
+        , boss_attack_number, attack_number, initialized_attack, boss_tracking
     if not boss_immunity:
         for portal_hitbox in tp_hitbox:
             if BOSS_HITBOX.colliderect(portal_hitbox):
@@ -749,6 +749,7 @@ def boss_health_manager():
         boss_attack_number = 4
         initialized_attack = True
         attack_number = 4
+        boss_tracking = True
 
     if current_time - boss_immunity_timer >= IMMUNITY:
         boss_immunity = False
@@ -841,11 +842,13 @@ def main():
         lightning_left, lightning_right, lightning_cooldown, lightning_cooldown_timer, \
         lightning_activate, spaghetti_cooldown, spaghetti_x, spaghetti_y, spaghetti_activate, \
         spaghetti_cooldown_timer, boss_attack_number, boss_dive_attack, boss_dive_timer, \
-        dive_start, boss_dive_down, boss_side_timer, boss_side_right, boss_side_attack
+        dive_start, boss_dive_down, boss_side_timer, boss_side_right, boss_side_attack, \
+        boss_tracking
     boss_side_right = False
     boss_side_attack = False
     boss_side_timer = 99999999
     boss_dive_down = False
+    boss_tracking = True
     dive_start = False
     boss_dive_timer = 99999999
     boss_dive_attack = False
