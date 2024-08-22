@@ -34,7 +34,8 @@ TELEPORT_WIDTH, TELEPORT_HEIGHT = HITBOX_HEIGHT + PLAYER_DIFFERENCE, HITBOX_HEIG
 
 TELEPORT_SYMBOL = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Teleport.png")),
                                          (TELEPORT_WIDTH, TELEPORT_HEIGHT))
-TELEPORT_COOLDOWN = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Tp_cooldown.png")), (TELEPORT_WIDTH, TELEPORT_HEIGHT))
+TELEPORT_COOLDOWN = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Tp_cooldown.png")),
+                                           (TELEPORT_WIDTH, TELEPORT_HEIGHT))
 
 LIGHTNING_BOLT_DAMAGE = 1
 LIGHTNING_MOVEMENT_SPEED = 12
@@ -47,12 +48,14 @@ lightning_bolt_down = []
 lightning_bolt_left = []
 lightning_bolt_right = []
 
-LIGHTNING_BOLT_IMAGE_UP = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Lightning_blast.png")), (LIGHTNING_WIDTH, LIGHTNING_HEIGHT))
+LIGHTNING_BOLT_IMAGE_UP = pygame.transform.scale(
+    pygame.image.load(os.path.join("Pentacrab_Assets", "Lightning_blast.png")), (LIGHTNING_WIDTH, LIGHTNING_HEIGHT))
 LIGHTNING_BOLT_IMAGE_DOWN = pygame.transform.flip(LIGHTNING_BOLT_IMAGE_UP, flip_y=True, flip_x=False)
 LIGHTNING_BOLT_IMAGE_RIGHT = pygame.transform.rotate(LIGHTNING_BOLT_IMAGE_UP, 90)
 LIGHTNING_BOLT_IMAGE_LEFT = pygame.transform.flip(LIGHTNING_BOLT_IMAGE_RIGHT, flip_y=False, flip_x=True)
 
-INDICATOR_IMAGE_UP = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Directional_indicator.png")), (20, 40))
+INDICATOR_IMAGE_UP = pygame.transform.scale(
+    pygame.image.load(os.path.join("Pentacrab_Assets", "Directional_indicator.png")), (20, 40))
 INDICATOR_IMAGE_DOWN = pygame.transform.flip(INDICATOR_IMAGE_UP, flip_y=True, flip_x=False)
 INDICATOR_IMAGE_LEFT = pygame.transform.rotate(INDICATOR_IMAGE_UP, 90)
 INDICATOR_IMAGE_RIGHT = pygame.transform.flip(INDICATOR_IMAGE_LEFT, flip_y=False, flip_x=True)
@@ -64,8 +67,10 @@ AURA_PULSE_ON = 150
 AURA_PULSE_OFF = 200
 aura = []
 
-AURA_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Lightning_aura.png")), (AURA_WIDTH, HITBOX_HEIGHT + 80))
-AURA_COOLDOWN_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Electic_pulse_cooldown.png")), (HITBOX_WIDTH, HITBOX_HEIGHT))
+AURA_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Lightning_aura.png")),
+                                    (AURA_WIDTH, HITBOX_HEIGHT + 80))
+AURA_COOLDOWN_IMAGE = pygame.transform.scale(
+    pygame.image.load(os.path.join("Pentacrab_Assets", "Electic_pulse_cooldown.png")), (HITBOX_WIDTH, HITBOX_HEIGHT))
 
 X = WIDTH // 2
 Y = HEIGHT - HITBOX_HEIGHT
@@ -88,14 +93,16 @@ LASER_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Boss_laser_sound.wav")
 LIGHTNING_BOLT_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Lightning_bolt_sound.wav")
 SPAGHETTI_EAT_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Heal_sound_effect.mp3")
 
-#Health Spaghetti
+# Health Spaghetti
 HEALTH_SPAGHETTI_WIDTH, HEALTH_SPAGHETTI_HEIGHT = 80, 60
 HEALTH_GAIN = 3
 HEALTH_SPAGHETTI_COOLDOWN = 30000
 HEALTH_SPAGHETTI_MAX = 3
 Health_spaghetti = []
 
-HEALTH_SPAGHETTI_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Health_spaghetti.png")), (HEALTH_SPAGHETTI_WIDTH, HEALTH_SPAGHETTI_HEIGHT))
+HEALTH_SPAGHETTI_IMAGE = pygame.transform.scale(
+    pygame.image.load(os.path.join("Pentacrab_Assets", "Health_spaghetti.png")),
+    (HEALTH_SPAGHETTI_WIDTH, HEALTH_SPAGHETTI_HEIGHT))
 
 # Platform settings
 PLATFORM_HEIGHT = 60
@@ -111,7 +118,7 @@ BOSS_Y = 100
 BOSS_HITBOX = pygame.Rect(X - 50, BOSS_Y, BOSS_WIDTH, BOSS_HEIGHT)
 BOSS_MOVEMENT = 5
 BOSS_HEALTH = 300
-BOSS_HEALTH_X, BOSS_HEALTH_Y = WIDTH/4, 40
+BOSS_HEALTH_X, BOSS_HEALTH_Y = WIDTH / 4, 40
 boss_health_points = []
 
 BOSS_CONTACT_DAMAGE = 3
@@ -123,7 +130,8 @@ boss_bullet_warning = []
 BULLET_DAMAGE = 1
 BULLET_SPEED = 7
 BULLET_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Bullet.png")), (20, 20))
-BULLET_WARNING_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Bullet_warning.png")), (30, 30))
+BULLET_WARNING_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Bullet_warning.png")),
+                                              (30, 30))
 BULLET_REDO = 1000
 
 BOSS_LASER_DAMAGE = 2
@@ -132,13 +140,16 @@ boss_laser_warning = []
 BOSS_LASER_ATTACK = 4500
 BOSS_LASER_COOLDOWN = 1500
 
-LASER_WARNING_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Energy_laser_warning.png")), (30, 30))
-LASER_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Boss_energy_laser.png")), (180, HEIGHT))
+LASER_WARNING_IMAGE = pygame.transform.scale(
+    pygame.image.load(os.path.join("Pentacrab_Assets", "Energy_laser_warning.png")), (30, 30))
+LASER_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Boss_energy_laser.png")),
+                                     (180, HEIGHT))
 
 BOSS_DIVE_SPEED = 10
 BOSS_DIVE_COOLDOWN = 1000
 
-BOSS_DIVE_WARNING = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Boss_dive_attack_warning.png")), (BOSS_WIDTH, BOSS_HEIGHT))
+BOSS_DIVE_WARNING = pygame.transform.scale(
+    pygame.image.load(os.path.join("Pentacrab_Assets", "Boss_dive_attack_warning.png")), (BOSS_WIDTH, BOSS_HEIGHT))
 
 BOSS_SIDE_ATTACK_DELAY = 500
 right_bullets = []
@@ -147,11 +158,12 @@ left_bullets = []
 RIGHT_BULLET_IMAGE = pygame.transform.rotate(BULLET_IMAGE, 90)
 LEFT_BULLET_IMAGE = pygame.transform.rotate(BULLET_IMAGE, 270)
 
-BOSS_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Pentacrab.png")), (BOSS_WIDTH + 40, BOSS_HEIGHT + 30))
+BOSS_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Pentacrab.png")),
+                                    (BOSS_WIDTH + 40, BOSS_HEIGHT + 30))
 BOSS_IMAGE_RIGHT = pygame.transform.rotate(BOSS_IMAGE, 90)
 BOSS_IMAGE_LEFT = pygame.transform.rotate(BOSS_IMAGE, 270)
 
-#Boss Minions
+# Boss Minions
 MINION_HEIGHT, MINION_WIDTH = 50, 60
 MINION_DAMAGE = 2
 MINION_RESPAWN_COOLDOWN = 5000
@@ -159,24 +171,27 @@ MINION_RESPAWN_COOLDOWN = 5000
 MINION_ONE_HITBOX = pygame.Rect(0, HEIGHT - MINION_HEIGHT, MINION_WIDTH, MINION_HEIGHT)
 MINION_TWO_HITBOX = pygame.Rect(WIDTH - MINION_WIDTH, HEIGHT - MINION_HEIGHT, MINION_WIDTH, MINION_HEIGHT)
 
-MINION_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Pentacrab.png")), (MINION_WIDTH, MINION_HEIGHT))
+MINION_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Pentacrab.png")),
+                                      (MINION_WIDTH, MINION_HEIGHT))
 RIGHT_MINION_IMAGE = pygame.transform.rotate(MINION_IMAGE, 90)
 LEFT_MINION_IMAGE = pygame.transform.rotate(MINION_IMAGE, 270)
-SUMMON_MINION_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Summoning_portal.png")), (MINION_HEIGHT, MINION_HEIGHT))
+SUMMON_MINION_IMAGE = pygame.transform.scale(
+    pygame.image.load(os.path.join("Pentacrab_Assets", "Summoning_portal.png")), (MINION_HEIGHT, MINION_HEIGHT))
 
-#other
+# other
 HEALTH_FONT = pygame.font.SysFont("Times New Roman", 40)
 IMMUNITY = 500
-HEALTH_POINT_WIDTH, HEALTH_POINT_HEIGHT = (WIDTH/2)/BOSS_HEALTH, 10
-HEALTH_POINT_ADDITION = (WIDTH/3)/PLAYER_HEALTH
+HEALTH_POINT_WIDTH, HEALTH_POINT_HEIGHT = (WIDTH / 2) / BOSS_HEALTH, 10
+HEALTH_POINT_ADDITION = (WIDTH / 3) / PLAYER_HEALTH
 RED = (255, 100, 100)
 BLUE = (0, 0, 255)
 
+
 def reset():
     global attack_end, attack_redo
-    HITBOX.x = WIDTH/2 + HITBOX_WIDTH/2
+    HITBOX.x = WIDTH / 2 + HITBOX_WIDTH / 2
     HITBOX.y = HEIGHT - HITBOX_HEIGHT
-    BOSS_HITBOX.x = WIDTH/2 - BOSS_WIDTH/2
+    BOSS_HITBOX.x = WIDTH / 2 - BOSS_WIDTH / 2
     BOSS_HITBOX.y = BOSS_Y
     boss_laser_warning.clear()
     boss_laser_hitbox.clear()
@@ -194,12 +209,13 @@ def reset():
         player_health_x += HEALTH_POINT_ADDITION
         player_health_points.append(player_health_point)
 
+
 def draw():
     WINDOW.blit(BACKGROUND, (0, 0))
-    boss_health_text = HEALTH_FONT.render("Boss Health: " + str(boss_health), 1, (255, 255, 255 ))
+    boss_health_text = HEALTH_FONT.render("Boss Health: " + str(boss_health), 1, (255, 255, 255))
     player_health_text = HEALTH_FONT.render("Player Health: " + str(player_health), 1, (255, 255, 255))
-    WINDOW.blit(boss_health_text, (WIDTH/2 - 110, 0))
-    WINDOW.blit(player_health_text, (WIDTH/2 - 110, 42))
+    WINDOW.blit(boss_health_text, (WIDTH / 2 - 110, 0))
+    WINDOW.blit(player_health_text, (WIDTH / 2 - 110, 42))
 
     for boss_health_point in boss_health_points:
         pygame.draw.rect(WINDOW, RED, boss_health_point)
@@ -231,20 +247,21 @@ def draw():
         WINDOW.blit(HEALTH_SPAGHETTI_IMAGE, (spaghetti_hitbox.x, spaghetti_hitbox.y))
 
     if tp_cooldown:
-        WINDOW.blit(TELEPORT_COOLDOWN, (HITBOX.x + PLAYER_DIFFERENCE - TELEPORT_WIDTH / 2,HITBOX.y - PLAYER_DIFFERENCE))
+        WINDOW.blit(TELEPORT_COOLDOWN,
+                    (HITBOX.x + PLAYER_DIFFERENCE - TELEPORT_WIDTH / 2, HITBOX.y - PLAYER_DIFFERENCE))
     for portal_hitbox in tp_hitbox:
         WINDOW.blit(TELEPORT_SYMBOL, (portal_hitbox.x, portal_hitbox.y))
-    
+
     WINDOW.blit(BOSS_IMAGE, (BOSS_HITBOX.x - 20, BOSS_HITBOX.y))
     if boss_dive_attack:
         WINDOW.blit(BOSS_DIVE_WARNING, (BOSS_HITBOX.x, BOSS_HITBOX.y))
-    
+
     for bullet_warning in boss_bullet_warning:
         WINDOW.blit(BULLET_WARNING_IMAGE, (bullet_warning.x, bullet_warning.y))
     for bullet in boss_bullets:
         WINDOW.blit(BULLET_IMAGE, (bullet.x, bullet.y))
     for laser_hitbox in boss_laser_hitbox:
-        WINDOW.blit(LASER_IMAGE, (laser_hitbox.x - 180/2 + 10, laser_hitbox.y + 5))
+        WINDOW.blit(LASER_IMAGE, (laser_hitbox.x - 180 / 2 + 10, laser_hitbox.y + 5))
     for laser_warning in boss_laser_warning:
         WINDOW.blit(LASER_WARNING_IMAGE, (laser_warning.x, laser_warning.y))
 
@@ -280,6 +297,7 @@ def draw():
         WINDOW.blit(AURA_COOLDOWN_IMAGE, (HITBOX.x, HITBOX.y))
     pygame.display.update()
 
+
 def setup_platforms():
     platform_location_x = 100
     platform_location_y = 280
@@ -290,6 +308,7 @@ def setup_platforms():
             platform_location_y += PLATFORM_HEIGHT + 50
         else:
             platform_location_y -= PLATFORM_HEIGHT + 50
+
 
 def player_movements():
     global velocity, left
@@ -324,6 +343,7 @@ def player_movements():
         HITBOX.x = WIDTH - HITBOX_WIDTH
         velocity = 0
 
+
 def player_jump():
     global decent, Jump, initial_height, falling
     if decent == False:
@@ -350,6 +370,7 @@ def player_jump():
             Jump = False
             initial_height = HEIGHT - HITBOX_HEIGHT
 
+
 def gravity():
     global initial_height, falling, Jump
     if Jump == False:
@@ -367,6 +388,7 @@ def gravity():
             return
         if falling == True:
             HITBOX.y += GRAVITY
+
 
 def teleport_movement():
     global tele_up, tele_left, tele_right, tp_cooldown, tp_delay
@@ -394,6 +416,7 @@ def teleport_movement():
 
     if tp_cooldown and (current_time - tp_delay >= TP_COOLDOWN):
         tp_cooldown = False
+
 
 def teleport_visual():
     global tp_hitbox, tp
@@ -423,9 +446,19 @@ def teleport_visual():
         tp_hitbox.clear()
         tp = False
 
+
 def boss_movement():
-    global boss_right, boss_health, victory
-    if not boss_dive_attack and not laser_active:
+    global boss_right, boss_health, victory, boss_normal_movement
+    if boss_dive_attack and boss_normal_movement:
+        boss_normal_movement = False
+    if not boss_dive_attack and not boss_normal_movement and not laser_active:
+        boss_normal_movement = True
+    if laser_active and boss_tracking and boss_normal_movement:
+        boss_normal_movement = False
+    if not laser_active and not boss_normal_movement and boss_tracking and not boss_dive_attack:
+        boss_normal_movement = True
+
+    if boss_normal_movement:
         if BOSS_HITBOX.x >= WIDTH - BOSS_WIDTH:
             boss_right = False
         if BOSS_HITBOX.x <= 0:
@@ -434,11 +467,17 @@ def boss_movement():
             BOSS_HITBOX.x += BOSS_MOVEMENT
         elif not victory:
             BOSS_HITBOX.x -= BOSS_MOVEMENT
-    if (boss_dive_attack and current_time - boss_dive_timer <= BOSS_DIVE_COOLDOWN) or (boss_tracking == True and laser_active):
-        if HITBOX.x > BOSS_HITBOX.x + BOSS_WIDTH/2:
+    if (boss_dive_attack and current_time - boss_dive_timer <= BOSS_DIVE_COOLDOWN) or\
+            (boss_tracking and laser_active):
+        if HITBOX.x > BOSS_HITBOX.x + BOSS_WIDTH / 2:
             BOSS_HITBOX.x += BOSS_MOVEMENT
-        elif HITBOX.x < BOSS_HITBOX.x + BOSS_WIDTH/2:
+            if laser_active:
+                BOSS_HITBOX.x -= 1
+        elif HITBOX.x < BOSS_HITBOX.x + BOSS_WIDTH / 2:
             BOSS_HITBOX.x -= BOSS_MOVEMENT
+            if laser_active:
+                BOSS_HITBOX.x += 1
+
 
 def boss_attack_movement():
     for bullet in boss_bullets:
@@ -448,26 +487,27 @@ def boss_attack_movement():
         if bullet.y == HEIGHT:
             boss_bullets.remove(bullet)
     for laser_hitbox in boss_laser_hitbox:
-        laser_hitbox.x = BOSS_HITBOX.x + BOSS_WIDTH/2 - 10
+        laser_hitbox.x = BOSS_HITBOX.x + BOSS_WIDTH / 2 - 10
         laser_hitbox.y = BOSS_HITBOX.y + BOSS_HEIGHT
     for laser_warning in boss_laser_warning:
-        laser_warning.x = BOSS_HITBOX.x + BOSS_WIDTH/2 - 15
+        laser_warning.x = BOSS_HITBOX.x + BOSS_WIDTH / 2 - 15
         laser_warning.y = BOSS_HITBOX.y + BOSS_HEIGHT
 
+
 def player_attack_handler():
-    global aura_attack, aura_create, aura_cooldown, aura_cooldown_timer, aura_pulse_on,\
-        aura_pulse_off, aura_off, lightning_activate, lightning_cooldown,\
+    global aura_attack, aura_create, aura_cooldown, aura_cooldown_timer, aura_pulse_on, \
+        aura_pulse_off, aura_off, lightning_activate, lightning_cooldown, \
         lightning_cooldown_timer
 
-    #aura attack
+    # aura attack
     for aura_hitbox in aura:
-        aura_hitbox.x = (HITBOX.x - AURA_WIDTH/2 - 1)
+        aura_hitbox.x = (HITBOX.x - AURA_WIDTH / 2 - 1)
         aura_hitbox.y = HITBOX.y - 80
     if aura_cooldown and current_time - aura_cooldown_timer >= AURA_COOLDOWN:
         aura_cooldown = False
     if aura_attack:
         if not aura_create:
-            aura_hitbox = pygame.Rect(HITBOX.x - AURA_WIDTH/2 - 10, HITBOX.y - 80, AURA_WIDTH, HITBOX_HEIGHT + 80)
+            aura_hitbox = pygame.Rect(HITBOX.x - AURA_WIDTH / 2 - 10, HITBOX.y - 80, AURA_WIDTH, HITBOX_HEIGHT + 80)
             aura_create = True
             aura.append(aura_hitbox)
             aura_cooldown = True
@@ -483,16 +523,18 @@ def player_attack_handler():
         if current_time - aura_pulse_off >= AURA_PULSE_OFF:
             aura_create = False
 
-    #lightning bolt attack
+    # lightning bolt attack
     if lightning_activate:
         lightning_activate = False
         lightning_cooldown = True
         lightning_cooldown_timer = current_time
         if lightning_up:
-            lightning_hitbot_up = pygame.Rect(HITBOX.x + 2.5, HITBOX.y - LIGHTNING_HEIGHT - 20, LIGHTNING_WIDTH, LIGHTNING_HEIGHT)
+            lightning_hitbot_up = pygame.Rect(HITBOX.x + 2.5, HITBOX.y - LIGHTNING_HEIGHT - 20, LIGHTNING_WIDTH,
+                                              LIGHTNING_HEIGHT)
             lightning_bolt_up.append(lightning_hitbot_up)
         if lightning_down:
-            lightning_hitbot_down = pygame.Rect(HITBOX.x + 2.5, HITBOX.y + HITBOX_HEIGHT, LIGHTNING_WIDTH, LIGHTNING_HEIGHT)
+            lightning_hitbot_down = pygame.Rect(HITBOX.x + 2.5, HITBOX.y + HITBOX_HEIGHT, LIGHTNING_WIDTH,
+                                                LIGHTNING_HEIGHT)
             lightning_bolt_down.append(lightning_hitbot_down)
         if lightning_right:
             lightning_hitbot_right = pygame.Rect(HITBOX.x + 40, HITBOX.y + 20, LIGHTNING_WIDTH, LIGHTNING_HEIGHT)
@@ -518,12 +560,13 @@ def player_attack_handler():
     for lightning_hitbot_down in lightning_bolt_down:
         lightning_hitbot_down.y += LIGHTNING_MOVEMENT_SPEED
         if lightning_hitbot_down.y >= HEIGHT:
-            lightning_bolt_down.remove(lightning_hitbot_down )
+            lightning_bolt_down.remove(lightning_hitbot_down)
+
 
 def boss_attack_handler():
-    global  boss_attack, boss_attack_timer, initialized_attack, attack_end, attack_number,\
-        bullet_fired, bullet_delay_timer, bullet_total, attack_redo, bullet_redo_delay,\
-        bullet_redo_timelaser_delay, laser_fire_time, laser_active, laser_start,\
+    global boss_attack, boss_attack_timer, initialized_attack, attack_end, attack_number, \
+        bullet_fired, bullet_delay_timer, bullet_total, attack_redo, bullet_redo_delay, \
+        bullet_redo_timelaser_delay, laser_fire_time, laser_active, laser_start, \
         boss_attack_number, boss_dive_attack, boss_dive_timer, dive_start, boss_dive_down, \
         boss_side_timer, boss_side_right, boss_side_attack, boss_tracking
     if boss_attack and not victory:
@@ -532,14 +575,14 @@ def boss_attack_handler():
             initialized_attack = True
             attack_number = random.randint(1, boss_attack_number)
 
-        #Bullet Attack
+        # Bullet Attack
         if attack_number == 1 and initialized_attack:
             boss_bullet_warning.clear()
-            bullet_warning = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH/2 - 15, BOSS_HITBOX.y + BOSS_HEIGHT, 30, 30)
+            bullet_warning = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH / 2 - 15, BOSS_HITBOX.y + BOSS_HEIGHT, 30, 30)
             boss_bullet_warning.append(bullet_warning)
             if not bullet_fired and not bullet_redo_delay:
                 bullet_fired = True
-                bullet = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH/2 - 10, BOSS_HITBOX.y + BOSS_HEIGHT, 20, 20)
+                bullet = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH / 2 - 10, BOSS_HITBOX.y + BOSS_HEIGHT, 20, 20)
                 boss_bullets.append(bullet)
                 bullet_delay_timer = current_time
                 bullet_total += 1
@@ -564,12 +607,12 @@ def boss_attack_handler():
                 laser_start = False
                 laser_active = True
                 laser_fire_time = current_time
-                laser_warning = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH/2 - 15, BOSS_HITBOX.y + BOSS_HEIGHT, 30, 30)
+                laser_warning = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH / 2 - 15, BOSS_HITBOX.y + BOSS_HEIGHT, 30, 30)
                 boss_laser_warning.append(laser_warning)
             if laser_active and current_time - laser_fire_time >= BOSS_LASER_COOLDOWN and not laser_start:
                 LASER_SOUND.play()
                 laser_start = True
-                laser_hitbox = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH/2 - 10, BOSS_HITBOX.y + BOSS_HEIGHT, 20, HEIGHT)
+                laser_hitbox = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH / 2 - 10, BOSS_HITBOX.y + BOSS_HEIGHT, 20, HEIGHT)
                 boss_laser_hitbox.append(laser_hitbox)
             if laser_start and current_time - laser_fire_time >= BOSS_LASER_ATTACK:
                 laser_active = False
@@ -579,7 +622,7 @@ def boss_attack_handler():
                 attack_end = True
                 boss_laser_hitbox.clear()
 
-        #Boss dive attack
+        # Boss dive attack
         if attack_number == 3 and initialized_attack:
             if not dive_start:
                 boss_dive_attack = True
@@ -609,7 +652,7 @@ def boss_attack_handler():
                 boss_side_attack = True
                 attack_number = 3
 
-        #End boss attack
+        # End boss attack
         if initialized_attack and attack_end:
             boss_attack_timer = current_time
             boss_attack = False
@@ -621,8 +664,9 @@ def boss_attack_handler():
     if current_time - boss_attack_timer >= BOSS_ATTACK_DELAY and not boss_attack:
         boss_attack = True
 
+
 def minion_handler():
-    global minion_one_timer, minion_two_timer, minion_one_alive, minion_two_alive,\
+    global minion_one_timer, minion_two_timer, minion_one_alive, minion_two_alive, \
         minion_two_left, minion_one_right
     if victory:
         minion_two_alive = False
@@ -700,6 +744,7 @@ def minion_handler():
             minion_one_timer = current_time
             MINION_ONE_HITBOX.x = 0
 
+
 def boss_health_manager():
     global boss_health, victory, boss_immunity, boss_immunity_timer, boss_health_change \
         , boss_attack_number, attack_number, initialized_attack, boss_tracking
@@ -741,11 +786,11 @@ def boss_health_manager():
                                                 HEALTH_POINT_HEIGHT)
                 boss_health_x += HEALTH_POINT_WIDTH
                 boss_health_points.append(boss_health_point)
-    if boss_health <= BOSS_HEALTH - BOSS_HEALTH/6 and boss_attack_number <= 2 and not boss_attack:
+    if boss_health <= BOSS_HEALTH - BOSS_HEALTH / 6 and boss_attack_number <= 2 and not boss_attack:
         boss_attack_number = 3
         initialized_attack = True
         attack_number = 3
-    if boss_health <= BOSS_HEALTH - BOSS_HEALTH/3 and boss_attack_number <= 3 and not boss_attack:
+    if boss_health <= BOSS_HEALTH - BOSS_HEALTH / 3 and boss_attack_number <= 3 and not boss_attack:
         boss_attack_number = 4
         initialized_attack = True
         attack_number = 4
@@ -756,6 +801,7 @@ def boss_health_manager():
     if boss_health <= 0:
         BOSS_HITBOX.y -= 500
         victory = True
+
 
 def player_health_manager():
     global player_health, player_immunity, player_immunity_timer
@@ -814,6 +860,7 @@ def player_health_manager():
     if current_time - player_immunity_timer >= IMMUNITY and player_immunity:
         player_immunity = False
 
+
 def health_spaghetti_handler():
     global spaghetti_cooldown, spaghetti_x, spaghetti_y, spaghetti_activate, spaghetti_cooldown_timer
     if not spaghetti_activate and not spaghetti_cooldown:
@@ -829,26 +876,28 @@ def health_spaghetti_handler():
         Health_spaghetti.append(spaghetti_hitbox)
         spaghetti_activate = False
 
+
 def main():
     global run, Jump, decent, falling, initial_height, tele_up, current_time, tp_delay, \
         tele_left, tp_cooldown, tele_right, left, tp_hitbox, tp, boss_right, boss_health, \
-        player_health, victory, player_immunity, player_immunity_timer, boss_immunity_timer,\
-        boss_immunity, boss_attack, boss_attack_timer, initialized_attack, attack_end,\
+        player_health, victory, player_immunity, player_immunity_timer, boss_immunity_timer, \
+        boss_immunity, boss_attack, boss_attack_timer, initialized_attack, attack_end, \
         attack_number, bullet_fired, bullet_delay_timer, bullet_total, attack_redo, bullet_redo_delay, \
         bullet_redo_timer, aura_cooldown, aura_attack, aura_cooldown_timer, aura_create, \
-        aura_pulse_on, aura_pulse_off, aura_off, laser_delay, laser_fire_time,\
+        aura_pulse_on, aura_pulse_off, aura_off, laser_delay, laser_fire_time, \
         laser_active, laser_start, minion_one_timer, minion_two_timer, minion_one_alive, \
         minion_two_alive, minion_two_left, minion_one_right, lightning_up, lightning_down, \
         lightning_left, lightning_right, lightning_cooldown, lightning_cooldown_timer, \
         lightning_activate, spaghetti_cooldown, spaghetti_x, spaghetti_y, spaghetti_activate, \
         spaghetti_cooldown_timer, boss_attack_number, boss_dive_attack, boss_dive_timer, \
         dive_start, boss_dive_down, boss_side_timer, boss_side_right, boss_side_attack, \
-        boss_tracking
+        boss_tracking, boss_normal_movement
+    boss_normal_movement = True
     boss_side_right = False
     boss_side_attack = False
     boss_side_timer = 99999999
     boss_dive_down = False
-    boss_tracking = True
+    boss_tracking = False
     dive_start = False
     boss_dive_timer = 99999999
     boss_dive_attack = False
@@ -1010,5 +1059,7 @@ def main():
             main()
         draw()
     pygame.quit()
+
+
 if __name__ == "__main__":
     main()
