@@ -151,7 +151,7 @@ BOSS_DIVE_COOLDOWN = 1000
 BOSS_DIVE_WARNING = pygame.transform.scale(
     pygame.image.load(os.path.join("Pentacrab_Assets", "Boss_dive_attack_warning.png")), (BOSS_WIDTH, BOSS_HEIGHT))
 
-BOSS_SIDE_ATTACK_DELAY = 500
+BOSS_SIDE_TURN_DELAY = 500
 right_bullets = []
 left_bullets = []
 
@@ -185,7 +185,6 @@ HEALTH_POINT_WIDTH, HEALTH_POINT_HEIGHT = (WIDTH / 2) / BOSS_HEALTH, 10
 HEALTH_POINT_ADDITION = (WIDTH / 3) / PLAYER_HEALTH
 RED = (255, 100, 100)
 BLUE = (0, 0, 255)
-
 
 def reset():
     global attack_end, attack_redo
@@ -252,7 +251,10 @@ def draw():
     for portal_hitbox in tp_hitbox:
         WINDOW.blit(TELEPORT_SYMBOL, (portal_hitbox.x, portal_hitbox.y))
 
-    WINDOW.blit(BOSS_IMAGE, (BOSS_HITBOX.x - 20, BOSS_HITBOX.y))
+    if not boss_side_attack or current_time - side_attack_delayed_1 <= BOSS_SIDE_TURN_DELAY:
+        WINDOW.blit(BOSS_IMAGE, (BOSS_HITBOX.x - 20, BOSS_HITBOX.y))
+    if current_time - side_attack_delayed_1 >= BOSS_SIDE_TURN_DELAY and boss_side_right:
+        WINDOW.blit(BOSS_IMAGE_RIGHT, (BOSS_HITBOX.x - 20, BOSS_HITBOX.y))
     if boss_dive_attack:
         WINDOW.blit(BOSS_DIVE_WARNING, (BOSS_HITBOX.x, BOSS_HITBOX.y))
 
@@ -457,6 +459,10 @@ def boss_movement():
         boss_normal_movement = False
     if not laser_active and not boss_normal_movement and boss_tracking and not boss_dive_attack:
         boss_normal_movement = True
+    if side_bullet and boss_side_attack:
+        boss_normal_movement = False
+    if not boss_side_attack and not boss_normal_movement and not laser_active and not boss_dive_attack:
+        boss_normal_movement = True
 
     if boss_normal_movement:
         if BOSS_HITBOX.x >= WIDTH - BOSS_WIDTH:
@@ -568,7 +574,8 @@ def boss_attack_handler():
         bullet_fired, bullet_delay_timer, bullet_total, attack_redo, bullet_redo_delay, \
         bullet_redo_timelaser_delay, laser_fire_time, laser_active, laser_start, \
         boss_attack_number, boss_dive_attack, boss_dive_timer, dive_start, boss_dive_down, \
-        boss_side_timer, boss_side_right, boss_side_attack, boss_tracking
+        boss_side_timer, boss_side_right, boss_side_attack, boss_tracking, side_attack_delayed_1, \
+        side_attack_delayed_2
     if boss_attack and not victory:
 
         if not initialized_attack and not attack_end:
@@ -576,7 +583,7 @@ def boss_attack_handler():
             attack_number = random.randint(1, boss_attack_number)
 
         # Bullet Attack
-        if attack_number == 1 and initialized_attack:
+        if attack_number == 1 and initialized_attack and not side_bullet:
             boss_bullet_warning.clear()
             bullet_warning = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH / 2 - 15, BOSS_HITBOX.y + BOSS_HEIGHT, 30, 30)
             boss_bullet_warning.append(bullet_warning)
@@ -599,6 +606,16 @@ def boss_attack_handler():
                     bullet_redo_delay = True
                 if current_time - bullet_delay_timer >= BOSS_BULLET_DELAY:
                     bullet_fired = False
+
+        # Side Bullet Attacks
+        if side_bullet and attack_number == 1 and initialized_attack:
+            if BOSS_HITBOX.x == 0 and not boss_side_attack:
+                boss_side_right = True
+                boss_side_attack = True
+                side_attack_delayed_1 = current_time
+            if current_time - side_attack_delayed_1 >= BOSS_SIDE_TURN_DELAY:
+                if boss_side_right:
+                    print("LOL")
 
         # Laser Attack
         if attack_number == 2 and initialized_attack:
@@ -646,12 +663,6 @@ def boss_attack_handler():
                 boss_dive_down = False
                 boss_dive_attack = False
 
-        if attack_number == 4:
-            if BOSS_HITBOX.x >= 0:
-                boss_side_right = True
-                boss_side_attack = True
-                attack_number = 3
-
         # End boss attack
         if initialized_attack and attack_end:
             boss_attack_timer = current_time
@@ -663,7 +674,6 @@ def boss_attack_handler():
             attack_redo = 0
     if current_time - boss_attack_timer >= BOSS_ATTACK_DELAY and not boss_attack:
         boss_attack = True
-
 
 def minion_handler():
     global minion_one_timer, minion_two_timer, minion_one_alive, minion_two_alive, \
@@ -747,7 +757,7 @@ def minion_handler():
 
 def boss_health_manager():
     global boss_health, victory, boss_immunity, boss_immunity_timer, boss_health_change \
-        , boss_attack_number, attack_number, initialized_attack, boss_tracking
+        , boss_attack_number, attack_number, initialized_attack, boss_tracking, side_bullet
     if not boss_immunity:
         for portal_hitbox in tp_hitbox:
             if BOSS_HITBOX.colliderect(portal_hitbox):
@@ -790,10 +800,10 @@ def boss_health_manager():
         boss_attack_number = 3
         initialized_attack = True
         attack_number = 3
-    if boss_health <= BOSS_HEALTH - BOSS_HEALTH / 3 and boss_attack_number <= 3 and not boss_attack:
-        boss_attack_number = 4
+    if boss_health <= BOSS_HEALTH - BOSS_HEALTH / 3 and not side_bullet and not boss_attack:
+        side_bullet = True
         initialized_attack = True
-        attack_number = 4
+        attack_number = 1
         boss_tracking = True
 
     if current_time - boss_immunity_timer >= IMMUNITY:
@@ -891,7 +901,11 @@ def main():
         lightning_activate, spaghetti_cooldown, spaghetti_x, spaghetti_y, spaghetti_activate, \
         spaghetti_cooldown_timer, boss_attack_number, boss_dive_attack, boss_dive_timer, \
         dive_start, boss_dive_down, boss_side_timer, boss_side_right, boss_side_attack, \
-        boss_tracking, boss_normal_movement
+        boss_tracking, boss_normal_movement, side_bullet, side_attack_delayed_1, \
+        side_attack_delayed_2
+    side_attack_delayed_1 = 99999999
+    side_attack_delayed_2 = 99999999
+    side_bullet = True
     boss_normal_movement = True
     boss_side_right = False
     boss_side_attack = False
