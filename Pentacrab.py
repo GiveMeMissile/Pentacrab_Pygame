@@ -203,6 +203,7 @@ def reset():
     aura.clear()
     boss_health_x = BOSS_HEALTH_X
     right_bullets.clear()
+    left_bullets.clear()
     for _ in range(boss_health):
         boss_health_point = pygame.Rect(boss_health_x, BOSS_HEALTH_Y, HEALTH_POINT_WIDTH, HEALTH_POINT_HEIGHT)
         boss_health_x += HEALTH_POINT_WIDTH
@@ -256,10 +257,12 @@ def draw():
     for portal_hitbox in tp_hitbox:
         WINDOW.blit(TELEPORT_SYMBOL, (portal_hitbox.x, portal_hitbox.y))
 
-    if not boss_side_right:
+    if not boss_side_right and not side_charge and not boss_side_left:
         WINDOW.blit(BOSS_IMAGE, (BOSS_HITBOX.x - 20, BOSS_HITBOX.y))
-    if current_time - side_attack_delayed_1 >= BOSS_SIDE_TURN_DELAY and boss_side_right:
+    if boss_side_right or side_charge:
         WINDOW.blit(BOSS_IMAGE_RIGHT, (BOSS_HITBOX.x - 20, BOSS_HITBOX.y))
+    if boss_side_left:
+        WINDOW.blit(BOSS_IMAGE_LEFT, (BOSS_HITBOX.x - 20, BOSS_HITBOX.y))
     if boss_dive_attack:
         WINDOW.blit(BOSS_DIVE_WARNING, (BOSS_HITBOX.x, BOSS_HITBOX.y))
 
@@ -269,6 +272,8 @@ def draw():
         WINDOW.blit(BULLET_IMAGE, (bullet.x, bullet.y))
     for right_bullet in right_bullets:
         WINDOW.blit(RIGHT_BULLET_IMAGE, (right_bullet.x, right_bullet.y))
+    for left_bullet in left_bullets:
+        WINDOW.blit(LEFT_BULLET_IMAGE, (left_bullet.x, left_bullet.y))
 
     for laser_hitbox in boss_laser_hitbox:
         WINDOW.blit(LASER_IMAGE, (laser_hitbox.x - 180 / 2 + 10, laser_hitbox.y + 5))
@@ -458,7 +463,7 @@ def teleport_visual():
 
 
 def boss_movement():
-    global boss_right, boss_health, victory, boss_normal_movement, boss_down
+    global boss_right, boss_health, victory, boss_normal_movement, boss_down, side_charge
 
     if boss_dive_attack and boss_normal_movement:
         boss_normal_movement = False
@@ -502,6 +507,20 @@ def boss_movement():
             boss_down = True
         if HEIGHT - BOSS_HEIGHT <= BOSS_HITBOX.y:
             boss_down = False
+    if side_charge:
+        BOSS_HITBOX.x += BOSS_DIVE_SPEED
+        if BOSS_HITBOX.x >= WIDTH - BOSS_WIDTH:
+            side_charge = False
+            BOSS_HITBOX.x = WIDTH - BOSS_WIDTH
+    if boss_side_left:
+        if boss_down:
+            BOSS_HITBOX.y += BOSS_MOVEMENT
+        if not boss_down:
+            BOSS_HITBOX.y -= BOSS_MOVEMENT
+        if BOSS_HITBOX.y <= BOSS_Y:
+            boss_down = True
+        if HEIGHT - BOSS_HEIGHT <= BOSS_HITBOX.y:
+            boss_down = False
 
 def boss_attack_movement():
     for bullet in boss_bullets:
@@ -512,6 +531,10 @@ def boss_attack_movement():
         right_bullet.x += BULLET_SPEED
         if right_bullet.x >= WIDTH:
             right_bullets.remove(right_bullet)
+    for left_bullet in left_bullets:
+        left_bullet.x -= BULLET_SPEED
+        if left_bullet.x <= -BOSS_BULLET_DIMENSIONS:
+            left_bullets.remove(left_bullet)
 
     for laser_hitbox in boss_laser_hitbox:
         laser_hitbox.x = BOSS_HITBOX.x + BOSS_WIDTH / 2 - 10
@@ -595,14 +618,13 @@ def boss_attack_handler():
         bullet_fired, bullet_delay_timer, bullet_total, attack_redo, bullet_redo_delay, \
         bullet_redo_timelaser_delay, laser_fire_time, laser_active, laser_start, \
         boss_attack_number, boss_dive_attack, boss_dive_timer, dive_start, boss_dive_down, \
-        boss_side_timer, boss_side_right, boss_side_attack, boss_tracking, side_attack_delayed_1, \
-        side_attack_delayed_2, boss_down
+        boss_side_timer, boss_side_right, boss_side_attack, boss_tracking, side_attack_delayed, \
+        side_attack_delayed_2, boss_down, side_charge, boss_side_left
     if boss_attack and not victory:
 
         if not initialized_attack and not attack_end:
             initialized_attack = True
             attack_number = random.randint(1, boss_attack_number)
-            attack_number = 1
 
         # Bullet Attack
         if attack_number == 1 and initialized_attack and not side_bullet:
@@ -632,23 +654,51 @@ def boss_attack_handler():
 
         # Side Bullet Attacks
         if side_bullet and attack_number == 1 and initialized_attack:
-            if BOSS_HITBOX.x == 0 and not boss_side_attack:
+            if BOSS_HITBOX.x <= 0 and not boss_side_attack:
                 boss_side_attack = True
-                side_attack_delayed_1 = current_time
+                side_attack_delayed = current_time
                 bullet_delay_timer = 0
-            if current_time - side_attack_delayed_1 >= BOSS_SIDE_TURN_DELAY:
+            if current_time - side_attack_delayed >= BOSS_SIDE_TURN_DELAY and attack_redo < 6:
                 boss_side_right = True
-                if boss_side_right:
+            if boss_side_right:
+                boss_bullet_warning.clear()
+                bullet_warning = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH, BOSS_HITBOX.y + BOSS_HEIGHT/2,
+                                BOSS_WARNING_DIMENSIONS, BOSS_WARNING_DIMENSIONS)
+                boss_bullet_warning.append(bullet_warning)
+                if current_time - bullet_delay_timer >= BOSS_BULLET_DELAY and boss_side_right:
+                    bullet_delay_timer = current_time
+                    right_bullet = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH, BOSS_HITBOX.y + BOSS_HEIGHT/2,
+                                    BOSS_BULLET_DIMENSIONS, BOSS_BULLET_DIMENSIONS)
+                    right_bullets.append(right_bullet)
+                    BULLET_FIRE_SOUND.play()
+                if BOSS_HITBOX.y <= BOSS_Y or HEIGHT - BOSS_HEIGHT <= BOSS_HITBOX.y:
+                    attack_redo += 1
+                if attack_redo == 6 and not side_charge:
+                    boss_side_right = False
+                    side_charge = True
                     boss_bullet_warning.clear()
-                    bullet_warning = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH, BOSS_HITBOX.y + BOSS_HEIGHT/2,
-                                    BOSS_WARNING_DIMENSIONS, BOSS_WARNING_DIMENSIONS)
-                    boss_bullet_warning.append(bullet_warning)
-                    if current_time - bullet_delay_timer >= BOSS_BULLET_DELAY and boss_side_right:
-                        bullet_delay_timer = current_time
-                        right_bullet = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH, BOSS_HITBOX.y + BOSS_HEIGHT/2,
-                                        BOSS_BULLET_DIMENSIONS, BOSS_BULLET_DIMENSIONS)
-                        right_bullets.append(right_bullet)
-                        BULLET_FIRE_SOUND.play()
+            if not boss_side_right and not side_charge and not boss_side_left and current_time - side_attack_delayed >= BOSS_SIDE_TURN_DELAY:
+                boss_side_left = True
+            if boss_side_left:
+                boss_bullet_warning.clear()
+                bullet_warning = pygame.Rect(BOSS_HITBOX.x - BOSS_WARNING_DIMENSIONS, BOSS_HITBOX.y + BOSS_HEIGHT/2,
+                                             BOSS_WARNING_DIMENSIONS, BOSS_WARNING_DIMENSIONS)
+                boss_bullet_warning.append(bullet_warning)
+                if BOSS_HITBOX.y <= BOSS_Y or HEIGHT - BOSS_HEIGHT <= BOSS_HITBOX.y:
+                    attack_redo += 1
+                if current_time - bullet_delay_timer >= BOSS_BULLET_DELAY and boss_side_left:
+                    bullet_delay_timer = current_time
+                    left_bullet = pygame.Rect(BOSS_HITBOX.x - BOSS_WARNING_DIMENSIONS, BOSS_HITBOX.y + BOSS_HEIGHT/2,
+                                              BOSS_BULLET_DIMENSIONS, BOSS_BULLET_DIMENSIONS)
+                    left_bullets.append(left_bullet)
+                    BULLET_FIRE_SOUND.play()
+                if attack_redo >= 11 and BOSS_HITBOX.y <= BOSS_Y:
+                    boss_side_left = False
+                    attack_end = True
+                    boss_bullet_warning.clear()
+                    BOSS_HITBOX.y = BOSS_Y
+                    boss_side_attack = False
+                    side_attack_delayed = 99999999
 
         # Laser Attack
         if attack_number == 2 and initialized_attack:
@@ -704,7 +754,7 @@ def boss_attack_handler():
             initialized_attack = False
             attack_end = False
             boss_bullet_warning.clear()
-            attack_number = 6
+            attack_number = -1
             attack_redo = 0
     if current_time - boss_attack_timer >= BOSS_ATTACK_DELAY and not boss_attack:
         boss_attack = True
@@ -880,6 +930,19 @@ def player_health_manager():
                                                       HEALTH_POINT_HEIGHT)
                     player_health_x += HEALTH_POINT_ADDITION
                     player_health_points.append(player_health_point)
+        for left_bullet in left_bullets:
+            if left_bullet.colliderect(HITBOX) and not victory:
+                left_bullets.remove(left_bullet)
+                player_health -= BULLET_DAMAGE
+                DAMAGE_SOUND.play()
+                player_immunity_timer = current_time
+                player_health_x = PLAYER_HEALTH_X
+                player_health_points.clear()
+                for _ in range(player_health):
+                    player_health_point = pygame.Rect(player_health_x, PLAYER_HEALTH_Y, HEALTH_POINT_ADDITION,
+                                                      HEALTH_POINT_HEIGHT)
+                    player_health_x += HEALTH_POINT_ADDITION
+                    player_health_points.append(player_health_point)
         for laser_hitbox in boss_laser_hitbox:
             if laser_hitbox.colliderect(HITBOX) and not victory:
                 player_immunity = True
@@ -948,11 +1011,13 @@ def main():
         lightning_activate, spaghetti_cooldown, spaghetti_x, spaghetti_y, spaghetti_activate, \
         spaghetti_cooldown_timer, boss_attack_number, boss_dive_attack, boss_dive_timer, \
         dive_start, boss_dive_down, boss_side_timer, boss_side_right, boss_side_attack, \
-        boss_tracking, boss_normal_movement, side_bullet, side_attack_delayed_1, \
-        boss_down
+        boss_tracking, boss_normal_movement, side_bullet, side_attack_delayed, \
+        boss_down, side_charge, boss_side_left
+    boss_side_left = False
+    side_charge = False
     boss_down = False
-    side_attack_delayed_1 = 99999999
-    side_bullet = True
+    side_attack_delayed = 99999999
+    side_bullet = False
     boss_normal_movement = True
     boss_side_right = False
     boss_side_attack = False
@@ -1123,4 +1188,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main()    main()
