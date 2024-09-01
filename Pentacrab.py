@@ -169,11 +169,13 @@ BOSS_IMAGE_LEFT = pygame.transform.rotate(BOSS_IMAGE, 270)
 
 # Boss Minions
 MINION_HEIGHT, MINION_WIDTH = 50, 60
-MINION_DAMAGE = 2
+MINION_DAMAGE = 1
 MINION_RESPAWN_COOLDOWN = 5000
 
 MINION_ONE_HITBOX = pygame.Rect(0, HEIGHT - MINION_HEIGHT, MINION_WIDTH, MINION_HEIGHT)
 MINION_TWO_HITBOX = pygame.Rect(WIDTH - MINION_WIDTH, HEIGHT - MINION_HEIGHT, MINION_WIDTH, MINION_HEIGHT)
+FIRE_MINION_ONE_HITBOX = pygame.Rect(0, BOSS_Y, MINION_WIDTH, MINION_HEIGHT)
+FIRE_MINION_TWO_HITBOX = pygame.Rect(WIDTH - MINION_WIDTH, BOSS_Y, MINION_WIDTH, MINION_HEIGHT)
 
 MINION_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Pentacrab.png")),
                                       (MINION_WIDTH, MINION_HEIGHT))
@@ -296,6 +298,11 @@ def draw():
     elif not victory:
         WINDOW.blit(SUMMON_MINION_IMAGE, (MINION_ONE_HITBOX.x, MINION_ONE_HITBOX.y))
 
+    if fire_minion_one_alive and not victory and fire_minions_active:
+        WINDOW.blit(MINION_IMAGE, (FIRE_MINION_ONE_HITBOX.x, FIRE_MINION_ONE_HITBOX.y))
+    elif not victory and fire_minions_active:
+        WINDOW.blit(SUMMON_MINION_IMAGE, (FIRE_MINION_ONE_HITBOX.x, FIRE_MINION_ONE_HITBOX.y))
+
     for aura_hitbox in aura:
         WINDOW.blit(AURA_IMAGE, (aura_hitbox.x, aura_hitbox.y))
     if not Jump:
@@ -312,7 +319,6 @@ def draw():
         WINDOW.blit(AURA_COOLDOWN_IMAGE, (HITBOX.x, HITBOX.y))
     pygame.display.update()
 
-
 def setup_platforms():
     platform_location_x = 100
     platform_location_y = 280
@@ -323,7 +329,6 @@ def setup_platforms():
             platform_location_y += PLATFORM_HEIGHT + 50
         else:
             platform_location_y -= PLATFORM_HEIGHT + 50
-
 
 def player_movements():
     global velocity, left
@@ -761,7 +766,9 @@ def boss_attack_handler():
 
 def minion_handler():
     global minion_one_timer, minion_two_timer, minion_one_alive, minion_two_alive, \
-        minion_two_left, minion_one_right
+        minion_two_left, minion_one_right, fire_minions_active, fire_minion_one_timer,\
+        fire_minion_two_timer, fire_minion_one_alive, fire_minion_two_alive, fire_minion_one_right, \
+        fire_minion_two_right
     if victory:
         minion_two_alive = False
         minion_one_alive = False
@@ -769,11 +776,15 @@ def minion_handler():
         minion_one_alive = True
     if current_time - minion_two_timer >= MINION_RESPAWN_COOLDOWN and not minion_two_alive:
         minion_two_alive = True
+    if fire_minions_active and current_time - fire_minion_one_timer and not fire_minion_one_alive:
+        fire_minion_one_alive = True
+    if fire_minions_active and current_time - fire_minion_two_timer and not fire_minion_one_alive:
+        fire_minion_two_alive = True
     if minion_two_alive and not victory:
         if minion_two_left:
-            MINION_TWO_HITBOX.x -= 5
+            MINION_TWO_HITBOX.x -= BOSS_MOVEMENT
         if not minion_two_left:
-            MINION_TWO_HITBOX.x += 5
+            MINION_TWO_HITBOX.x += BOSS_MOVEMENT
         if MINION_TWO_HITBOX.x >= WIDTH - MINION_WIDTH:
             minion_two_left = True
         if MINION_TWO_HITBOX.x <= 0:
@@ -803,11 +814,12 @@ def minion_handler():
         if not minion_two_alive:
             minion_two_timer = current_time
             MINION_TWO_HITBOX.x = WIDTH - MINION_WIDTH
+
     if minion_one_alive and not victory:
         if minion_one_right:
-            MINION_ONE_HITBOX.x += 5
+            MINION_ONE_HITBOX.x += BOSS_MOVEMENT
         if not minion_one_right:
-            MINION_ONE_HITBOX.x -= 5
+            MINION_ONE_HITBOX.x -= BOSS_MOVEMENT
         if MINION_ONE_HITBOX.x <= 0:
             minion_one_right = True
         if MINION_ONE_HITBOX.x >= WIDTH - MINION_WIDTH:
@@ -838,10 +850,20 @@ def minion_handler():
             minion_one_timer = current_time
             MINION_ONE_HITBOX.x = 0
 
+    if fire_minion_one_alive:
+        if fire_minion_one_right:
+            FIRE_MINION_ONE_HITBOX.x += fire_minion_one_right
+        if not fire_minion_one_right:
+            FIRE_MINION_ONE_HITBOX.x -= fire_minion_one_right
+        if FIRE_MINION_ONE_HITBOX.x >= WIDTH - MINION_WIDTH:
+            fire_minion_one_right = False
+        if FIRE_MINION_ONE_HITBOX.x <= 0:
+            fire_minion_one_right = True
 
 def boss_health_manager():
-    global boss_health, victory, boss_immunity, boss_immunity_timer, boss_health_change \
-        , boss_attack_number, attack_number, initialized_attack, boss_tracking, side_bullet
+    global boss_health, victory, boss_immunity, boss_immunity_timer, boss_health_change, \
+        boss_attack_number, attack_number, initialized_attack, boss_tracking, side_bullet, \
+        fire_minions_active, fire_minion_one_timer, fire_minion_two_timer
     if not boss_immunity:
         for portal_hitbox in tp_hitbox:
             if BOSS_HITBOX.colliderect(portal_hitbox):
@@ -889,6 +911,10 @@ def boss_health_manager():
         initialized_attack = True
         attack_number = 1
         boss_tracking = True
+    if boss_health <= BOSS_HEALTH/2 and not fire_minions_active:
+        fire_minions_active = True
+        fire_minion_one_timer = current_time
+        fire_minion_two_timer = current_time
 
     if current_time - boss_immunity_timer >= IMMUNITY:
         boss_immunity = False
@@ -1012,7 +1038,16 @@ def main():
         spaghetti_cooldown_timer, boss_attack_number, boss_dive_attack, boss_dive_timer, \
         dive_start, boss_dive_down, boss_side_timer, boss_side_right, boss_side_attack, \
         boss_tracking, boss_normal_movement, side_bullet, side_attack_delayed, \
-        boss_down, side_charge, boss_side_left
+        boss_down, side_charge, boss_side_left, fire_minion_one_timer, fire_minion_two_timer,\
+        fire_minions_active, fire_minion_one_alive, fire_minion_two_alive, fire_minion_one_right, \
+        fire_minion_two_right
+    fire_minion_one_right = True
+    fire_minion_two_right = False
+    fire_minion_one_alive = False
+    fire_minion_two_alive = False
+    fire_minions_active = False
+    fire_minion_two_timer = 99999999
+    fire_minion_one_timer = 99999999
     boss_side_left = False
     side_charge = False
     boss_down = False
@@ -1186,6 +1221,5 @@ def main():
         draw()
     pygame.quit()
 
-
 if __name__ == "__main__":
-    main()    main()
+    main()
