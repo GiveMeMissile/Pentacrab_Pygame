@@ -206,6 +206,8 @@ def reset():
     boss_bullets.clear()
     boss_bullet_warning.clear()
     aura.clear()
+    fire_minion_two_warnings.clear()
+    fire_minion_one_warnings.clear()
     boss_health_x = BOSS_HEALTH_X
     right_bullets.clear()
     left_bullets.clear()
@@ -305,6 +307,16 @@ def draw():
         WINDOW.blit(MINION_IMAGE_TWO, (FIRE_MINION_ONE_HITBOX.x, FIRE_MINION_ONE_HITBOX.y))
     elif not victory and fire_minions_active:
         WINDOW.blit(SUMMON_MINION_IMAGE, (FIRE_MINION_ONE_HITBOX.x, FIRE_MINION_ONE_HITBOX.y))
+
+    if fire_minion_two_alive and not victory and fire_minions_active:
+        WINDOW.blit(MINION_IMAGE_TWO, (FIRE_MINION_TWO_HITBOX.x, FIRE_MINION_TWO_HITBOX.y))
+    elif not victory and fire_minions_active:
+        WINDOW.blit(SUMMON_MINION_IMAGE, (FIRE_MINION_TWO_HITBOX.x, FIRE_MINION_TWO_HITBOX.y))
+
+    for fire_minion_one_warning in fire_minion_one_warnings:
+        WINDOW.blit(BULLET_WARNING_IMAGE, (fire_minion_one_warning.x, fire_minion_one_warning.y))
+    for fire_minion_two_warning in fire_minion_two_warnings:
+        WINDOW.blit(BULLET_WARNING_IMAGE, (fire_minion_two_warning.x, fire_minion_two_warning.y))
 
     for aura_hitbox in aura:
         WINDOW.blit(AURA_IMAGE, (aura_hitbox.x, aura_hitbox.y))
@@ -642,7 +654,8 @@ def boss_attack_handler():
             boss_bullet_warning.append(bullet_warning)
             if not bullet_fired and not bullet_redo_delay:
                 bullet_fired = True
-                bullet = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH / 2 - 10, BOSS_HITBOX.y + BOSS_HEIGHT, 20, 20)
+                bullet = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH / 2 - 10, BOSS_HITBOX.y + BOSS_HEIGHT,
+                                     BOSS_BULLET_DIMENSIONS, BOSS_BULLET_DIMENSIONS)
                 boss_bullets.append(bullet)
                 bullet_delay_timer = current_time
                 bullet_total += 1
@@ -771,7 +784,8 @@ def minion_handler():
     global minion_one_timer, minion_two_timer, minion_one_alive, minion_two_alive, \
         minion_two_left, minion_one_right, fire_minions_active, fire_minion_one_timer,\
         fire_minion_two_timer, fire_minion_one_alive, fire_minion_two_alive, fire_minion_one_right, \
-        fire_minion_two_right, fire_minions_fire_delay, fire_minions_attack_delay, minion_fire_active
+        fire_minion_two_right, fire_minions_attack_delay, minion_fire_active, \
+        fire_minions_fire_amount, fire_minion_one_fire_delay, fire_minion_two_fire_delay
     if victory:
         minion_two_alive = False
         minion_one_alive = False
@@ -779,10 +793,13 @@ def minion_handler():
         minion_one_alive = True
     if current_time - minion_two_timer >= MINION_RESPAWN_COOLDOWN and not minion_two_alive:
         minion_two_alive = True
-    if fire_minions_active and current_time - fire_minion_one_timer and not fire_minion_one_alive:
+
+    if fire_minions_active and current_time - fire_minion_one_timer >= MINION_RESPAWN_COOLDOWN and not fire_minion_one_alive:
         fire_minion_one_alive = True
-    if fire_minions_active and current_time - fire_minion_two_timer and not fire_minion_one_alive:
+
+    if fire_minions_active and current_time - fire_minion_two_timer >= MINION_RESPAWN_COOLDOWN and not fire_minion_two_alive:
         fire_minion_two_alive = True
+
     if minion_two_alive and not victory:
         if minion_two_left:
             MINION_TWO_HITBOX.x -= BOSS_MOVEMENT
@@ -853,12 +870,13 @@ def minion_handler():
             minion_one_timer = current_time
             MINION_ONE_HITBOX.x = 0
 
-    if not minion_fire_active and (fire_minion_two_alive or fire_minion_one_alive):
+    if not minion_fire_active and fire_minions_active:
         minion_fire_active = True
         fire_minions_attack_delay = current_time
-        fire_minions_attack_delay = current_time
-        
-    if fire_minion_one_alive:
+        fire_minion_one_fire_delay = current_time
+        fire_minion_two_fire_delay = current_time
+
+    if fire_minion_one_alive and not victory:
         if fire_minion_one_right:
             FIRE_MINION_ONE_HITBOX.x += BOSS_MOVEMENT
         if not fire_minion_one_right:
@@ -867,10 +885,109 @@ def minion_handler():
             fire_minion_one_right = False
         if FIRE_MINION_ONE_HITBOX.x <= 0:
             fire_minion_one_right = True
-        
-        if current_time - fire_minions_attack_delay >= BOSS_ATTACK_DELAY:
-            fire_minion_one_warning = pygame.Rect(MINION_ONE_HITBOX.x - MINION_HEIGHT/2,
-                MINION_ONE_HITBOX.y - MINION_HEIGHT, BOSS_WARNING_DIMENSIONS, BOSS_WARNING_DIMENSIONS)
+
+        for aura_hitbox in aura:
+            if aura_hitbox.colliderect(FIRE_MINION_ONE_HITBOX):
+                fire_minion_one_alive = False
+        for teleport_hitbox in tp_hitbox:
+            if teleport_hitbox.colliderect(FIRE_MINION_ONE_HITBOX):
+                fire_minion_one_alive = False
+        for lightning_hitbox_left in lightning_bolt_left:
+            if lightning_hitbox_left.colliderect(FIRE_MINION_ONE_HITBOX):
+                fire_minion_one_alive = False
+                lightning_bolt_left.remove(lightning_hitbox_left)
+        for lightning_hitbox_down in lightning_bolt_down:
+            if lightning_hitbox_down.colliderect(FIRE_MINION_ONE_HITBOX):
+                fire_minion_one_alive = False
+                lightning_bolt_down.remove(lightning_hitbox_down)
+        for lightning_hitbox_right in lightning_bolt_right:
+            if lightning_hitbox_right.colliderect(FIRE_MINION_ONE_HITBOX):
+                fire_minion_one_alive = False
+                lightning_bolt_right.remove(lightning_hitbox_right)
+        for lightning_hitbox_up in lightning_bolt_up:
+            if lightning_hitbox_up.colliderect(FIRE_MINION_ONE_HITBOX):
+                fire_minion_one_alive = False
+                lightning_bolt_up.remove(lightning_hitbox_up)
+
+        if current_time - fire_minions_attack_delay >= BOSS_ATTACK_DELAY and minion_fire_active:
+            fire_minion_one_warnings.clear()
+            fire_minion_one_warning = pygame.Rect(FIRE_MINION_ONE_HITBOX.x + 10,
+                FIRE_MINION_ONE_HITBOX.y + MINION_HEIGHT, BOSS_WARNING_DIMENSIONS, BOSS_WARNING_DIMENSIONS)
+            fire_minion_one_warnings.append(fire_minion_one_warning)
+            if current_time - fire_minion_one_fire_delay >= BOSS_BULLET_DELAY:
+                fire_minion_one_fire_delay = current_time
+                bullet = pygame.Rect(FIRE_MINION_ONE_HITBOX.x + 15, FIRE_MINION_ONE_HITBOX.y +
+                            MINION_HEIGHT,BOSS_BULLET_DIMENSIONS, BOSS_BULLET_DIMENSIONS)
+                boss_bullets.append(bullet)
+                BULLET_FIRE_SOUND.play()
+                fire_minions_fire_amount += 1
+            if fire_minions_fire_amount >= 20:
+                minion_fire_active = False
+                fire_minion_one_warnings.clear()
+                fire_minion_two_warnings.clear()
+                fire_minions_fire_amount = 0
+
+        if not fire_minion_one_alive:
+            FIRE_MINION_ONE_HITBOX.x = 0
+            fire_minion_one_timer = current_time
+            fire_minion_one_warnings.clear()
+
+    if fire_minion_two_alive and not victory:
+        if fire_minion_two_right:
+            FIRE_MINION_TWO_HITBOX.x += BOSS_MOVEMENT
+        if not fire_minion_two_right:
+            FIRE_MINION_TWO_HITBOX.x -= BOSS_MOVEMENT
+        if FIRE_MINION_TWO_HITBOX.x >= WIDTH - MINION_WIDTH:
+            fire_minion_two_right = False
+        if FIRE_MINION_TWO_HITBOX.x <= 0:
+            fire_minion_two_right = True
+
+        for aura_hitbox in aura:
+            if aura_hitbox.colliderect(FIRE_MINION_TWO_HITBOX):
+                fire_minion_two_alive = False
+        for teleport_hitbox in tp_hitbox:
+            if teleport_hitbox.colliderect(FIRE_MINION_TWO_HITBOX):
+                fire_minion_two_alive = False
+        for lightning_hitbox_left in lightning_bolt_left:
+            if lightning_hitbox_left.colliderect(FIRE_MINION_TWO_HITBOX):
+                fire_minion_two_alive = False
+                lightning_bolt_left.remove(lightning_hitbox_left)
+        for lightning_hitbox_down in lightning_bolt_down:
+            if lightning_hitbox_down.colliderect(FIRE_MINION_TWO_HITBOX):
+                fire_minion_two_alive = False
+                lightning_bolt_down.remove(lightning_hitbox_down)
+        for lightning_hitbox_right in lightning_bolt_right:
+            if lightning_hitbox_right.colliderect(FIRE_MINION_TWO_HITBOX):
+                fire_minion_two_alive = False
+                lightning_bolt_right.remove(lightning_hitbox_right)
+        for lightning_hitbox_up in lightning_bolt_up:
+            if lightning_hitbox_up.colliderect(FIRE_MINION_TWO_HITBOX):
+                fire_minion_two_alive = False
+                lightning_bolt_up.remove(lightning_hitbox_up)
+
+        if current_time - fire_minions_attack_delay >= BOSS_ATTACK_DELAY and minion_fire_active:
+            fire_minion_two_warnings.clear()
+            fire_minion_two_warning = pygame.Rect(FIRE_MINION_TWO_HITBOX.x + 10,
+                                                  FIRE_MINION_TWO_HITBOX.y + MINION_HEIGHT, BOSS_WARNING_DIMENSIONS,
+                                                  BOSS_WARNING_DIMENSIONS)
+            fire_minion_two_warnings.append(fire_minion_two_warning)
+            if current_time - fire_minion_two_fire_delay >= BOSS_BULLET_DELAY:
+                fire_minion_two_fire_delay = current_time
+                bullet = pygame.Rect(FIRE_MINION_TWO_HITBOX.x + 15, FIRE_MINION_TWO_HITBOX.y +
+                                     MINION_HEIGHT, BOSS_BULLET_DIMENSIONS, BOSS_BULLET_DIMENSIONS)
+                boss_bullets.append(bullet)
+                BULLET_FIRE_SOUND.play()
+                fire_minions_fire_amount += 1
+            if fire_minions_fire_amount >= 20:
+                minion_fire_active = False
+                fire_minion_two_warnings.clear()
+                fire_minion_one_warnings.clear()
+                fire_minions_fire_amount = 0
+
+        if not fire_minion_two_alive:
+            FIRE_MINION_TWO_HITBOX.x = WIDTH - MINION_HEIGHT
+            fire_minion_two_timer = current_time
+            fire_minion_two_warnings.clear()
 
 def boss_health_manager():
     global boss_health, victory, boss_immunity, boss_immunity_timer, boss_health_change, \
@@ -1052,15 +1169,18 @@ def main():
         boss_tracking, boss_normal_movement, side_bullet, side_attack_delayed, \
         boss_down, side_charge, boss_side_left, fire_minion_one_timer, fire_minion_two_timer,\
         fire_minions_active, fire_minion_one_alive, fire_minion_two_alive, fire_minion_one_right, \
-        fire_minion_two_right, fire_minions_fire_delay, fire_minions_attack_delay, minion_fire_active
+        fire_minion_two_right, fire_minions_attack_delay, minion_fire_active, \
+        fire_minions_fire_amount, fire_minion_one_fire_delay, fire_minion_two_fire_delay
+    fire_minions_fire_amount = 0
     minion_fire_active = False
     fire_minions_attack_delay = 99999999
-    fire_minions_fire_delay = 99999999
+    fire_minion_one_fire_delay = 99999999
+    fire_minion_two_fire_delay = 99999999
     fire_minion_one_right = True
     fire_minion_two_right = False
     fire_minion_one_alive = False
     fire_minion_two_alive = False
-    fire_minions_active = True #Turn false after test
+    fire_minions_active = False
     fire_minion_two_timer = 99999999
     fire_minion_one_timer = 99999999
     boss_side_left = False
