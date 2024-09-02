@@ -137,7 +137,6 @@ BULLET_WARNING_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pe
                                               (BOSS_WARNING_DIMENSIONS, BOSS_WARNING_DIMENSIONS))
 BULLET_REDO = 1000
 
-
 BOSS_LASER_DAMAGE = 2
 boss_laser_hitbox = []
 boss_laser_warning = []
@@ -171,16 +170,20 @@ BOSS_IMAGE_LEFT = pygame.transform.rotate(BOSS_IMAGE, 270)
 MINION_HEIGHT, MINION_WIDTH = 50, 60
 MINION_DAMAGE = 1
 MINION_RESPAWN_COOLDOWN = 5000
+fire_minion_one_warnings = []
+fire_minion_two_warnings = []
 
 MINION_ONE_HITBOX = pygame.Rect(0, HEIGHT - MINION_HEIGHT, MINION_WIDTH, MINION_HEIGHT)
 MINION_TWO_HITBOX = pygame.Rect(WIDTH - MINION_WIDTH, HEIGHT - MINION_HEIGHT, MINION_WIDTH, MINION_HEIGHT)
 FIRE_MINION_ONE_HITBOX = pygame.Rect(0, BOSS_Y, MINION_WIDTH, MINION_HEIGHT)
 FIRE_MINION_TWO_HITBOX = pygame.Rect(WIDTH - MINION_WIDTH, BOSS_Y, MINION_WIDTH, MINION_HEIGHT)
 
-MINION_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Pentacrab.png")),
+MINION_IMAGE_ONE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Pentacrab.png")),
                                       (MINION_WIDTH, MINION_HEIGHT))
-RIGHT_MINION_IMAGE = pygame.transform.rotate(MINION_IMAGE, 90)
-LEFT_MINION_IMAGE = pygame.transform.rotate(MINION_IMAGE, 270)
+MINION_IMAGE_TWO = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Pentacrab.png")),
+                                      (MINION_HEIGHT, MINION_WIDTH))
+RIGHT_MINION_IMAGE = pygame.transform.rotate(MINION_IMAGE_ONE, 90)
+LEFT_MINION_IMAGE = pygame.transform.rotate(MINION_IMAGE_ONE, 270)
 SUMMON_MINION_IMAGE = pygame.transform.scale(
     pygame.image.load(os.path.join("Pentacrab_Assets", "Summoning_portal.png")), (MINION_HEIGHT, MINION_HEIGHT))
 
@@ -299,7 +302,7 @@ def draw():
         WINDOW.blit(SUMMON_MINION_IMAGE, (MINION_ONE_HITBOX.x, MINION_ONE_HITBOX.y))
 
     if fire_minion_one_alive and not victory and fire_minions_active:
-        WINDOW.blit(MINION_IMAGE, (FIRE_MINION_ONE_HITBOX.x, FIRE_MINION_ONE_HITBOX.y))
+        WINDOW.blit(MINION_IMAGE_TWO, (FIRE_MINION_ONE_HITBOX.x, FIRE_MINION_ONE_HITBOX.y))
     elif not victory and fire_minions_active:
         WINDOW.blit(SUMMON_MINION_IMAGE, (FIRE_MINION_ONE_HITBOX.x, FIRE_MINION_ONE_HITBOX.y))
 
@@ -768,7 +771,7 @@ def minion_handler():
     global minion_one_timer, minion_two_timer, minion_one_alive, minion_two_alive, \
         minion_two_left, minion_one_right, fire_minions_active, fire_minion_one_timer,\
         fire_minion_two_timer, fire_minion_one_alive, fire_minion_two_alive, fire_minion_one_right, \
-        fire_minion_two_right
+        fire_minion_two_right, fire_minions_fire_delay, fire_minions_attack_delay, minion_fire_active
     if victory:
         minion_two_alive = False
         minion_one_alive = False
@@ -850,15 +853,24 @@ def minion_handler():
             minion_one_timer = current_time
             MINION_ONE_HITBOX.x = 0
 
+    if not minion_fire_active and (fire_minion_two_alive or fire_minion_one_alive):
+        minion_fire_active = True
+        fire_minions_attack_delay = current_time
+        fire_minions_attack_delay = current_time
+        
     if fire_minion_one_alive:
         if fire_minion_one_right:
-            FIRE_MINION_ONE_HITBOX.x += fire_minion_one_right
+            FIRE_MINION_ONE_HITBOX.x += BOSS_MOVEMENT
         if not fire_minion_one_right:
-            FIRE_MINION_ONE_HITBOX.x -= fire_minion_one_right
+            FIRE_MINION_ONE_HITBOX.x -= BOSS_MOVEMENT
         if FIRE_MINION_ONE_HITBOX.x >= WIDTH - MINION_WIDTH:
             fire_minion_one_right = False
         if FIRE_MINION_ONE_HITBOX.x <= 0:
             fire_minion_one_right = True
+        
+        if current_time - fire_minions_attack_delay >= BOSS_ATTACK_DELAY:
+            fire_minion_one_warning = pygame.Rect(MINION_ONE_HITBOX.x - MINION_HEIGHT/2,
+                MINION_ONE_HITBOX.y - MINION_HEIGHT, BOSS_WARNING_DIMENSIONS, BOSS_WARNING_DIMENSIONS)
 
 def boss_health_manager():
     global boss_health, victory, boss_immunity, boss_immunity_timer, boss_health_change, \
@@ -1040,12 +1052,15 @@ def main():
         boss_tracking, boss_normal_movement, side_bullet, side_attack_delayed, \
         boss_down, side_charge, boss_side_left, fire_minion_one_timer, fire_minion_two_timer,\
         fire_minions_active, fire_minion_one_alive, fire_minion_two_alive, fire_minion_one_right, \
-        fire_minion_two_right
+        fire_minion_two_right, fire_minions_fire_delay, fire_minions_attack_delay, minion_fire_active
+    minion_fire_active = False
+    fire_minions_attack_delay = 99999999
+    fire_minions_fire_delay = 99999999
     fire_minion_one_right = True
     fire_minion_two_right = False
     fire_minion_one_alive = False
     fire_minion_two_alive = False
-    fire_minions_active = False
+    fire_minions_active = True #Turn false after test
     fire_minion_two_timer = 99999999
     fire_minion_one_timer = 99999999
     boss_side_left = False
