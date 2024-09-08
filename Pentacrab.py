@@ -107,7 +107,9 @@ HEALTH_SPAGHETTI_IMAGE = pygame.transform.scale(
 # Platform settings
 PLATFORM_HEIGHT = 60
 PLATFORM_WIDTH = 200
+PLATFORM_SHIFT = (WIDTH - 200)/5
 platforms = []
+
 PLATFORM_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Cloud_platfrom.png")),
                                         (PLATFORM_WIDTH, PLATFORM_HEIGHT))
 PLATFORM = pygame.transform.rotate(pygame.transform.scale(PLATFORM_IMAGE, (PLATFORM_WIDTH, PLATFORM_HEIGHT)), 180)
@@ -148,7 +150,7 @@ LASER_WARNING_IMAGE = pygame.transform.scale(
 LASER_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Boss_energy_laser.png")),
                                      (180, HEIGHT))
 
-BOSS_DIVE_SPEED = 10
+BOSS_DIVE_SPEED = 15
 BOSS_DIVE_COOLDOWN = 1000
 
 BOSS_DIVE_WARNING = pygame.transform.scale(
@@ -201,6 +203,10 @@ def reset():
     HITBOX.y = HEIGHT - HITBOX_HEIGHT
     BOSS_HITBOX.x = WIDTH / 2 - BOSS_WIDTH / 2
     BOSS_HITBOX.y = BOSS_Y
+    MINION_TWO_HITBOX.x = WIDTH - MINION_WIDTH
+    MINION_ONE_HITBOX.x = 0
+    FIRE_MINION_ONE_HITBOX.x = 0
+    FIRE_MINION_TWO_HITBOX.x = WIDTH - MINION_HEIGHT
     boss_laser_warning.clear()
     boss_laser_hitbox.clear()
     boss_bullets.clear()
@@ -211,6 +217,7 @@ def reset():
     boss_health_x = BOSS_HEALTH_X
     right_bullets.clear()
     left_bullets.clear()
+    Health_spaghetti.clear()
     for _ in range(boss_health):
         boss_health_point = pygame.Rect(boss_health_x, BOSS_HEALTH_Y, HEALTH_POINT_WIDTH, HEALTH_POINT_HEIGHT)
         boss_health_x += HEALTH_POINT_WIDTH
@@ -339,7 +346,7 @@ def setup_platforms():
     platform_location_y = 280
     for _ in range(5):
         platforms.append([platform_location_x, platform_location_y])
-        platform_location_x += PLATFORM_WIDTH + 50
+        platform_location_x += PLATFORM_SHIFT
         if len(platforms) <= 2:
             platform_location_y += PLATFORM_HEIGHT + 50
         else:
@@ -490,10 +497,14 @@ def boss_movement():
             BOSS_HITBOX.x += BOSS_MOVEMENT
             if laser_active:
                 BOSS_HITBOX.x -= 1
+            elif boss_dive_attack:
+                BOSS_HITBOX.x += 3
         elif HITBOX.x < BOSS_HITBOX.x + BOSS_WIDTH / 2:
             BOSS_HITBOX.x -= BOSS_MOVEMENT
             if laser_active:
                 BOSS_HITBOX.x += 1
+            elif boss_dive_attack:
+                BOSS_HITBOX.x -= 3
 
     if boss_side_right:
         if boss_down:
@@ -1027,6 +1038,8 @@ def boss_health_manager():
     if boss_health <= 0:
         BOSS_HITBOX.y -= 500
         victory = True
+        fire_minion_one_warnings.clear()
+        fire_minion_two_warnings.clear()
 
 
 def player_health_manager():
@@ -1148,6 +1161,7 @@ def main():
         fire_minions_active, fire_minion_one_alive, fire_minion_two_alive, fire_minion_one_right, \
         fire_minion_two_right, fire_minions_attack_delay, minion_fire_active, \
         fire_minions_fire_amount, fire_minion_one_fire_delay, fire_minion_two_fire_delay
+    current_time = pygame.time.get_ticks()
     vertical_velocity = 0
     fire_minions_fire_amount = 0
     minion_fire_active = False
@@ -1190,8 +1204,8 @@ def main():
     lightning_cooldown = False
     minion_one_right = True
     minion_two_left = True
-    minion_one_timer = 0
-    minion_two_timer = 0
+    minion_one_timer = current_time
+    minion_two_timer = current_time
     minion_one_alive = False
     minion_two_alive = False
     laser_start = False
@@ -1212,7 +1226,7 @@ def main():
     attack_number = 6
     attack_end = False
     initialized_attack = False
-    boss_attack_timer = 0
+    boss_attack_timer = current_time
     bullet_delay_timer = 99999999
     boss_attack = False
     boss_immunity_timer = 99999999
