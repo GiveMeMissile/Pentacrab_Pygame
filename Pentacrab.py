@@ -13,10 +13,10 @@ BACKGROUND = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_As
 FPS = 60
 
 # Player settings
-JUMP_HEIGHT = 70
-JUMP_SLOW = 30
+JUMP_HEIGHT = 13
+PLAYER_MAX_JUMP_VELOCITY = 10
 PLAYER_HEALTH = 30
-GRAVITY = 7
+GRAVITY = 0.5
 HITBOX_WIDTH, HITBOX_HEIGHT = 20, 70
 velocity = 0
 ACCELERATION = 1
@@ -320,12 +320,12 @@ def draw():
 
     for aura_hitbox in aura:
         WINDOW.blit(AURA_IMAGE, (aura_hitbox.x, aura_hitbox.y))
-    if not Jump:
+    if not jump:
         if left:
             WINDOW.blit(PLAYER_LEFT, (HITBOX.x - 15, HITBOX.y - 15))
         else:
             WINDOW.blit(PLAYER_RIGHT, (HITBOX.x - 15, HITBOX.y - 15))
-    if Jump:
+    if jump:
         if left:
             WINDOW.blit(PLAYER_JUMP_LEFT, (HITBOX.x - PLAYER_DIFFERENCE, HITBOX.y - PLAYER_DIFFERENCE))
         else:
@@ -378,52 +378,29 @@ def player_movements():
         HITBOX.x = WIDTH - HITBOX_WIDTH
         velocity = 0
 
-
-def player_jump():
-    global decent, Jump, initial_height, falling
-    if decent == False:
-        if HITBOX.y > initial_height - (JUMP_HEIGHT + HITBOX_HEIGHT + JUMP_SLOW):
-            HITBOX.y -= 3
-            if initial_height - (JUMP_HEIGHT + HITBOX_HEIGHT) < HITBOX.y:
-                HITBOX.y -= 4
-        else:
-            decent = True
-    if decent:
-        HITBOX.y += GRAVITY
-        for platform_location_x, platform_location_y in platforms:
-            platform_rect = pygame.Rect(platform_location_x, platform_location_y, PLATFORM_WIDTH, PLATFORM_HEIGHT)
-            if HITBOX.colliderect(platform_rect) and HITBOX.bottom <= platform_rect.top + GRAVITY:
-                HITBOX.y = platform_rect.y - HITBOX_HEIGHT
-                decent = False
-                Jump = False
-                falling = False
-                initial_height = HITBOX.y
-                return
-        if HITBOX.y + HITBOX_HEIGHT >= HEIGHT:
-            HITBOX.y = HEIGHT - HITBOX_HEIGHT
-            decent = False
-            Jump = False
-            initial_height = HEIGHT - HITBOX_HEIGHT
-
-
 def gravity():
-    global initial_height, falling, Jump
-    if Jump == False:
-        for platform_location_x, platform_location_y in platforms:
-            platform_rect = pygame.Rect(platform_location_x, platform_location_y, PLATFORM_WIDTH, PLATFORM_HEIGHT)
-            if HITBOX.colliderect(platform_rect) and HITBOX.bottom <= platform_rect.top + GRAVITY:
-                HITBOX.y = platform_rect.y + GRAVITY - HITBOX_HEIGHT
-                initial_height = HITBOX.y
-                falling = False
-                return
-        if HITBOX.y + HITBOX_HEIGHT >= HEIGHT:
-            HITBOX.y = HEIGHT - HITBOX_HEIGHT
-            initial_height = HEIGHT - HITBOX_HEIGHT
+    global initial_height, jump, falling, vertical_velocity
+    for platform_location_x, platform_location_y in platforms:
+        platform_rect = pygame.Rect(platform_location_x, platform_location_y, PLATFORM_WIDTH, PLATFORM_HEIGHT)
+        if HITBOX.colliderect(platform_rect) and HITBOX.bottom <= platform_rect.top + JUMP_HEIGHT and 0 >= vertical_velocity:
+            HITBOX.y = platform_rect.y + JUMP_HEIGHT - HITBOX_HEIGHT
+            jump = False
             falling = False
-            return
-        if falling:
-            HITBOX.y += GRAVITY
-
+            vertical_velocity = 0
+    if HITBOX.y + HITBOX_HEIGHT >= HEIGHT and 0 >= vertical_velocity:
+        HITBOX.y = HEIGHT - HITBOX_HEIGHT
+        jump = False
+        falling = False
+        vertical_velocity = 0
+    if vertical_velocity < 0:
+        falling = True
+    if vertical_velocity <= PLAYER_MAX_JUMP_VELOCITY or vertical_velocity >= -PLAYER_MAX_JUMP_VELOCITY:
+        HITBOX.y -= vertical_velocity
+        vertical_velocity -= GRAVITY
+    elif vertical_velocity >= PLAYER_MAX_JUMP_VELOCITY:
+        HITBOX.y -= PLAYER_MAX_JUMP_VELOCITY
+    else:
+        HITBOX.y += PLAYER_MAX_JUMP_VELOCITY
 
 def teleport_movement():
     global tele_up, tele_left, tele_right, tp_cooldown, tp_delay
@@ -1153,7 +1130,7 @@ def health_spaghetti_handler():
 
 
 def main():
-    global run, Jump, decent, falling, initial_height, tele_up, current_time, tp_delay, \
+    global run, tele_up, current_time, tp_delay, vertical_velocity, jump, falling,  \
         tele_left, tp_cooldown, tele_right, left, tp_hitbox, tp, boss_right, boss_health, \
         player_health, victory, player_immunity, player_immunity_timer, boss_immunity_timer, \
         boss_immunity, boss_attack, boss_attack_timer, initialized_attack, attack_end, \
@@ -1171,6 +1148,7 @@ def main():
         fire_minions_active, fire_minion_one_alive, fire_minion_two_alive, fire_minion_one_right, \
         fire_minion_two_right, fire_minions_attack_delay, minion_fire_active, \
         fire_minions_fire_amount, fire_minion_one_fire_delay, fire_minion_two_fire_delay
+    vertical_velocity = 0
     fire_minions_fire_amount = 0
     minion_fire_active = False
     fire_minions_attack_delay = 99999999
@@ -1253,11 +1231,9 @@ def main():
     tele_up = False
     tele_left = False
     tele_right = False
-    falling = True
-    Jump = False
-    decent = False
+    falling = False
+    jump = False
     platforms.clear()
-    initial_height = HEIGHT - HITBOX_HEIGHT
     setup_platforms()
     reset()
     run = True
@@ -1267,9 +1243,10 @@ def main():
         clock.tick(FPS)
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_w and not Jump and not falling:
-                    Jump = True
+                if event.key == pygame.K_w and not jump and not falling:
+                    jump = True
                     JUMP_SOUND.play()
+                    vertical_velocity = JUMP_HEIGHT
 
                 if event.key == pygame.K_UP and not tp_cooldown:
                     tele_up = True
@@ -1335,11 +1312,7 @@ def main():
 
             if event.type == pygame.QUIT:
                 run = False
-        falling = True
-        if not Jump:
-            gravity()
-        else:
-            player_jump()
+        gravity()
         teleport_visual()
         teleport_movement()
         player_movements()
