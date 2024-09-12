@@ -163,6 +163,16 @@ left_bullets = []
 RIGHT_BULLET_IMAGE = pygame.transform.rotate(BULLET_IMAGE, 90)
 LEFT_BULLET_IMAGE = pygame.transform.rotate(BULLET_IMAGE, 270)
 
+TRACTOR_BEAM_WIDTH = 100
+TRACTOR_BEAM_HEIGHT = 550
+TRACTOR_BEAM_ATTACK = 5000
+TRACTOR_BEAM_COOLDOWN = 1000
+TRACTOR_BEAM_ACCELERATION = 1
+tractor_beams = []
+
+BOSS_TRACTOR_BEAM = pygame.transform.scale(pygame.image.load(os.path.join
+("Pentacrab_Assets", "Tractor_beam.png")), (TRACTOR_BEAM_WIDTH, TRACTOR_BEAM_HEIGHT))
+
 BOSS_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Pentacrab.png")),
                                     (BOSS_WIDTH + 40, BOSS_HEIGHT + 30))
 BOSS_IMAGE_RIGHT = pygame.transform.rotate(BOSS_IMAGE, 90)
@@ -270,6 +280,9 @@ def draw():
                     (HITBOX.x + PLAYER_DIFFERENCE - TELEPORT_WIDTH / 2, HITBOX.y - PLAYER_DIFFERENCE))
     for portal_hitbox in tp_hitbox:
         WINDOW.blit(TELEPORT_SYMBOL, (portal_hitbox.x, portal_hitbox.y))
+
+    for tractor_beam in tractor_beams:
+        WINDOW.blit(BOSS_TRACTOR_BEAM, (tractor_beam.x, tractor_beam.y))
 
     if not boss_side_right and not side_charge and not boss_side_left:
         WINDOW.blit(BOSS_IMAGE, (BOSS_HITBOX.x - 20, BOSS_HITBOX.y))
@@ -551,6 +564,10 @@ def boss_attack_movement():
         laser_warning.x = BOSS_HITBOX.x + BOSS_WIDTH / 2 - 15
         laser_warning.y = BOSS_HITBOX.y + BOSS_HEIGHT
 
+    for tractor_beam in tractor_beams:
+        tractor_beam.x = BOSS_HITBOX.x
+        tractor_beam.y = BOSS_HITBOX.y + BOSS_HEIGHT/2
+
 
 def player_attack_handler():
     global aura_attack, aura_create, aura_cooldown, aura_cooldown_timer, aura_pulse_on, \
@@ -627,7 +644,8 @@ def boss_attack_handler():
         bullet_redo_timelaser_delay, laser_fire_time, laser_active, laser_start, \
         boss_attack_number, boss_dive_attack, boss_dive_timer, dive_start, boss_dive_down, \
         boss_side_timer, boss_side_right, boss_side_attack, boss_tracking, side_attack_delayed, \
-        side_attack_delayed_2, boss_down, side_charge, boss_side_left
+        side_attack_delayed_2, boss_down, side_charge, boss_side_left, tractor_beam_active, tractor_beam_attack,\
+        tractor_beam_cooldown, tractor_beam_timer
     if boss_attack and not victory:
 
         if not initialized_attack and not attack_end:
@@ -755,6 +773,25 @@ def boss_attack_handler():
                 dive_start = False
                 boss_dive_down = False
                 boss_dive_attack = False
+
+        # Tractor beam attack
+        if attack_number == 4 and initialized_attack:
+            if not tractor_beam_active:
+                tractor_beam_active = True
+                tractor_beam_cooldown = current_time
+            if current_time - tractor_beam_cooldown >= TRACTOR_BEAM_COOLDOWN and len(tractor_beams) == 0:
+                tractor_beam_active = True
+                tractor_beam = pygame.Rect(BOSS_HITBOX.x, BOSS_HITBOX.y + BOSS_HEIGHT/2,
+                                           TRACTOR_BEAM_WIDTH, TRACTOR_BEAM_HEIGHT)
+                tractor_beams.append(tractor_beam)
+                tractor_beam_timer = current_time
+            if current_time - tractor_beam_timer >= TRACTOR_BEAM_ATTACK and len(tractor_beams) > 0:
+                tractor_beams.clear()
+                tractor_beam_cooldown = current_time
+                attack_redo += 1
+            if attack_redo >= 3:
+                attack_end = True
+                tractor_beam_active = False
 
         # End boss attack
         if initialized_attack and attack_end:
@@ -1023,15 +1060,19 @@ def boss_health_manager():
         boss_attack_number = 3
         initialized_attack = True
         attack_number = 3
-    if boss_health <= BOSS_HEALTH - BOSS_HEALTH / 3 and not side_bullet and not boss_attack:
-        side_bullet = True
+    if boss_health <= BOSS_HEALTH - BOSS_HEALTH / 3 and boss_attack_number <= 3 and not boss_attack:
+        boss_attack_number = 4
         initialized_attack = True
-        attack_number = 1
+        attack_number = 4
         boss_tracking = True
     if boss_health <= BOSS_HEALTH/2 and not fire_minions_active:
         fire_minions_active = True
         fire_minion_one_timer = current_time
         fire_minion_two_timer = current_time
+    if boss_health <= BOSS_HEALTH/3 and not side_bullet and not boss_attack:
+        side_bullet = True
+        boss_attack_number = 1
+
 
     if current_time - boss_immunity_timer >= IMMUNITY:
         boss_immunity = False
@@ -1160,8 +1201,13 @@ def main():
         boss_down, side_charge, boss_side_left, fire_minion_one_timer, fire_minion_two_timer,\
         fire_minions_active, fire_minion_one_alive, fire_minion_two_alive, fire_minion_one_right, \
         fire_minion_two_right, fire_minions_attack_delay, minion_fire_active, \
-        fire_minions_fire_amount, fire_minion_one_fire_delay, fire_minion_two_fire_delay
+        fire_minions_fire_amount, fire_minion_one_fire_delay, fire_minion_two_fire_delay, \
+        tractor_beam_active, tractor_beam_attack, tractor_beam_cooldown, tractor_beam_timer
     current_time = pygame.time.get_ticks()
+    tractor_beam_cooldown = 99999999
+    tractor_beam_timer = 99999999
+    tractor_beam_active = False
+    tractor_beam_attack = False
     vertical_velocity = 0
     fire_minions_fire_amount = 0
     minion_fire_active = False
