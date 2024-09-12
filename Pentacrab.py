@@ -228,6 +228,7 @@ def reset():
     right_bullets.clear()
     left_bullets.clear()
     Health_spaghetti.clear()
+    tractor_beams.clear()
     for _ in range(boss_health):
         boss_health_point = pygame.Rect(boss_health_x, BOSS_HEALTH_Y, HEALTH_POINT_WIDTH, HEALTH_POINT_HEIGHT)
         boss_health_x += HEALTH_POINT_WIDTH
@@ -412,6 +413,9 @@ def gravity():
         jump = False
         falling = False
         vertical_velocity = 0
+    for tractor_beam in tractor_beams:
+        if HITBOX.colliderect(tractor_beam):
+            vertical_velocity += 1
     if vertical_velocity < 0:
         falling = True
     if vertical_velocity <= PLAYER_MAX_JUMP_VELOCITY or vertical_velocity >= -PLAYER_MAX_JUMP_VELOCITY:
@@ -484,16 +488,18 @@ def boss_movement():
 
     if boss_dive_attack and boss_normal_movement:
         boss_normal_movement = False
-    if not boss_dive_attack and not boss_normal_movement and not laser_active:
+    if not boss_dive_attack and not boss_normal_movement and not laser_active and not tractor_beam_active:
         boss_normal_movement = True
     if laser_active and boss_tracking and boss_normal_movement:
         boss_normal_movement = False
-    if not laser_active and not boss_normal_movement and boss_tracking and not boss_dive_attack:
+    if not laser_active and not boss_normal_movement and boss_tracking and not boss_dive_attack and not tractor_beam_active:
         boss_normal_movement = True
     if side_bullet and boss_side_attack:
         boss_normal_movement = False
-    if not boss_side_attack and not boss_normal_movement and not laser_active and not boss_dive_attack:
+    if not boss_side_attack and not boss_normal_movement and not laser_active and not boss_dive_attack and not tractor_beam_active:
         boss_normal_movement = True
+    if tractor_beam_active and boss_normal_movement:
+        boss_normal_movement = False
 
     if boss_normal_movement:
         if BOSS_HITBOX.x >= WIDTH - BOSS_WIDTH:
@@ -504,17 +510,18 @@ def boss_movement():
             BOSS_HITBOX.x += BOSS_MOVEMENT
         elif not victory:
             BOSS_HITBOX.x -= BOSS_MOVEMENT
+
     if (boss_dive_attack and current_time - boss_dive_timer <= BOSS_DIVE_COOLDOWN) or\
-            (boss_tracking and laser_active):
+            (boss_tracking and laser_active) or tractor_beam_active:
         if HITBOX.x > BOSS_HITBOX.x + BOSS_WIDTH / 2:
             BOSS_HITBOX.x += BOSS_MOVEMENT
-            if laser_active:
+            if laser_active or tractor_beam_active:
                 BOSS_HITBOX.x -= 1
             elif boss_dive_attack:
                 BOSS_HITBOX.x += 3
         elif HITBOX.x < BOSS_HITBOX.x + BOSS_WIDTH / 2:
             BOSS_HITBOX.x -= BOSS_MOVEMENT
-            if laser_active:
+            if laser_active or tractor_beam_active:
                 BOSS_HITBOX.x += 1
             elif boss_dive_attack:
                 BOSS_HITBOX.x -= 3
@@ -1069,9 +1076,10 @@ def boss_health_manager():
         fire_minions_active = True
         fire_minion_one_timer = current_time
         fire_minion_two_timer = current_time
-    if boss_health <= BOSS_HEALTH/3 and not side_bullet and not boss_attack:
+    if boss_health <= BOSS_HEALTH / 3 and not side_bullet and not boss_attack:
         side_bullet = True
-        boss_attack_number = 1
+        attack_number = 1
+        initialized_attack = True
 
 
     if current_time - boss_immunity_timer >= IMMUNITY:
@@ -1269,9 +1277,9 @@ def main():
     attack_redo = 0
     bullet_total = 0
     bullet_fired = False
-    attack_number = 6
+    attack_number = 1
     attack_end = False
-    initialized_attack = False
+    initialized_attack = True
     boss_attack_timer = current_time
     bullet_delay_timer = 99999999
     boss_attack = False
