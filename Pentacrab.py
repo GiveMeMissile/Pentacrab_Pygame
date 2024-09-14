@@ -92,6 +92,8 @@ ELECTRIC_AURA_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Electric_aura.wav")
 LASER_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Boss_laser_sound.wav")
 LIGHTNING_BOLT_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Lightning_bolt_sound.wav")
 SPAGHETTI_EAT_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Heal_sound_effect.mp3")
+BOSS_DIVE_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Boss_dive_sound.mp3")
+BOSS_TRACTOR_BEAM_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Tractor_beam_sound.mp3")
 
 # Health Spaghetti
 HEALTH_SPAGHETTI_WIDTH, HEALTH_SPAGHETTI_HEIGHT = 80, 60
@@ -165,7 +167,7 @@ LEFT_BULLET_IMAGE = pygame.transform.rotate(BULLET_IMAGE, 270)
 
 TRACTOR_BEAM_WIDTH = 100
 TRACTOR_BEAM_HEIGHT = 550
-TRACTOR_BEAM_ATTACK = 5000
+TRACTOR_BEAM_ATTACK = 6000
 TRACTOR_BEAM_COOLDOWN = 1000
 TRACTOR_BEAM_ACCELERATION = 1
 tractor_beams = []
@@ -652,7 +654,7 @@ def boss_attack_handler():
         boss_attack_number, boss_dive_attack, boss_dive_timer, dive_start, boss_dive_down, \
         boss_side_timer, boss_side_right, boss_side_attack, boss_tracking, side_attack_delayed, \
         side_attack_delayed_2, boss_down, side_charge, boss_side_left, tractor_beam_active, tractor_beam_attack,\
-        tractor_beam_cooldown, tractor_beam_timer
+        tractor_beam_cooldown, tractor_beam_timer, dive_sound
     if boss_attack and not victory:
 
         if not initialized_attack and not attack_end:
@@ -765,6 +767,7 @@ def boss_attack_handler():
                 dive_start = True
                 boss_dive_down = True
                 attack_redo += 1
+                dive_sound = True
             if current_time - boss_dive_timer >= BOSS_DIVE_COOLDOWN and dive_start:
                 if boss_dive_down:
                     BOSS_HITBOX.y += BOSS_DIVE_SPEED
@@ -775,6 +778,9 @@ def boss_attack_handler():
                 if BOSS_HITBOX.y <= BOSS_Y:
                     BOSS_HITBOX.y = BOSS_Y
                     dive_start = False
+            if current_time - boss_dive_timer >= BOSS_DIVE_COOLDOWN and dive_sound:
+                BOSS_DIVE_SOUND.play()
+                dive_sound = False
             if attack_redo >= 4:
                 attack_end = True
                 dive_start = False
@@ -792,6 +798,7 @@ def boss_attack_handler():
                                            TRACTOR_BEAM_WIDTH, TRACTOR_BEAM_HEIGHT)
                 tractor_beams.append(tractor_beam)
                 tractor_beam_timer = current_time
+                BOSS_TRACTOR_BEAM_SOUND.play()
             if current_time - tractor_beam_timer >= TRACTOR_BEAM_ATTACK and len(tractor_beams) > 0:
                 tractor_beams.clear()
                 tractor_beam_cooldown = current_time
@@ -1210,7 +1217,9 @@ def main():
         fire_minions_active, fire_minion_one_alive, fire_minion_two_alive, fire_minion_one_right, \
         fire_minion_two_right, fire_minions_attack_delay, minion_fire_active, \
         fire_minions_fire_amount, fire_minion_one_fire_delay, fire_minion_two_fire_delay, \
-        tractor_beam_active, tractor_beam_attack, tractor_beam_cooldown, tractor_beam_timer
+        tractor_beam_active, tractor_beam_attack, tractor_beam_cooldown, tractor_beam_timer, \
+        dive_sound
+    dive_sound = False
     current_time = pygame.time.get_ticks()
     tractor_beam_cooldown = 99999999
     tractor_beam_timer = 99999999
