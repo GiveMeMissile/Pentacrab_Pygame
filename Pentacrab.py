@@ -203,6 +203,7 @@ SUMMON_MINION_IMAGE = pygame.transform.scale(
 
 # other
 HEALTH_FONT = pygame.font.SysFont("Times New Roman", 40)
+PAUSE_FONT = pygame.font.SysFont("Times New Roman", 60)
 IMMUNITY = 500
 HEALTH_POINT_WIDTH, HEALTH_POINT_HEIGHT = (WIDTH / 2) / BOSS_HEALTH, 10
 HEALTH_POINT_ADDITION = (WIDTH / 3) / PLAYER_HEALTH
@@ -241,6 +242,19 @@ def reset():
         player_health_x += HEALTH_POINT_ADDITION
         player_health_points.append(player_health_point)
 
+def pause():
+    global current_time, clock, paused, run, time_discrepancy
+    while paused:
+        time_discrepancy = pygame.time.get_ticks() - current_time
+        clock.tick(FPS)
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    paused = False
+            if event.type == pygame.QUIT:
+                run = False
+                paused = False
+        draw()
 
 def draw():
     WINDOW.blit(BACKGROUND, (0, 0))
@@ -355,6 +369,11 @@ def draw():
             WINDOW.blit(PLAYER_JUMP_RIGHT, (HITBOX.x - PLAYER_DIFFERENCE, HITBOX.y - PLAYER_DIFFERENCE))
     if aura_cooldown:
         WINDOW.blit(AURA_COOLDOWN_IMAGE, (HITBOX.x, HITBOX.y))
+
+    if paused:
+        paused_text = PAUSE_FONT.render("Press SPACE in order to continue", 1, (255, 255, 255))
+        WINDOW.blit(paused_text, (WIDTH/2 - 400, HEIGHT/2))
+
     pygame.display.update()
 
 def setup_platforms():
@@ -1218,8 +1237,10 @@ def main():
         fire_minion_two_right, fire_minions_attack_delay, minion_fire_active, \
         fire_minions_fire_amount, fire_minion_one_fire_delay, fire_minion_two_fire_delay, \
         tractor_beam_active, tractor_beam_attack, tractor_beam_cooldown, tractor_beam_timer, \
-        dive_sound
+        dive_sound, paused, time_discrepancy, clock
+    paused = True
     dive_sound = False
+    time_discrepancy = pygame.time.get_ticks()
     current_time = pygame.time.get_ticks()
     tractor_beam_cooldown = 99999999
     tractor_beam_timer = 99999999
@@ -1315,11 +1336,20 @@ def main():
     reset()
     run = True
     clock = pygame.time.Clock()
+    pause()
     while run:
-        current_time = pygame.time.get_ticks()
+        current_time = pygame.time.get_ticks() - time_discrepancy
+        print("Time dis: %d" % (time_discrepancy))
+        print("Current time: %d" % (current_time))
+        print("Ticks: %d" % (pygame.time.get_ticks()))
         clock.tick(FPS)
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
+                
+                if event.key == pygame.K_ESCAPE:
+                    paused = True
+                    pause()
+                
                 if event.key == pygame.K_w and not jump and not falling:
                     jump = True
                     JUMP_SOUND.play()
