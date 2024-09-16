@@ -94,6 +94,8 @@ LIGHTNING_BOLT_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Lightning_bolt_sound
 SPAGHETTI_EAT_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Heal_sound_effect.mp3")
 BOSS_DIVE_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Boss_dive_sound.mp3")
 BOSS_TRACTOR_BEAM_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Tractor_beam_sound.mp3")
+MINION_SUMMON_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Minion_summon_sound.ogg")
+BOSS_DAMAGE_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Pentacrab_damage.mp3")
 
 # Health Spaghetti
 HEALTH_SPAGHETTI_WIDTH, HEALTH_SPAGHETTI_HEIGHT = 80, 60
@@ -847,16 +849,20 @@ def minion_handler():
     if victory:
         minion_two_alive = False
         minion_one_alive = False
-    if current_time - minion_one_timer >= MINION_RESPAWN_COOLDOWN and not minion_one_alive:
+    if current_time - minion_one_timer >= MINION_RESPAWN_COOLDOWN and not minion_one_alive and not victory:
         minion_one_alive = True
-    if current_time - minion_two_timer >= MINION_RESPAWN_COOLDOWN and not minion_two_alive:
+        MINION_SUMMON_SOUND.play()
+    if current_time - minion_two_timer >= MINION_RESPAWN_COOLDOWN and not minion_two_alive and not victory:
         minion_two_alive = True
+        MINION_SUMMON_SOUND.play()
 
-    if fire_minions_active and current_time - fire_minion_one_timer >= MINION_RESPAWN_COOLDOWN and not fire_minion_one_alive:
+    if fire_minions_active and current_time - fire_minion_one_timer >= MINION_RESPAWN_COOLDOWN and not fire_minion_one_alive and not victory:
         fire_minion_one_alive = True
+        MINION_SUMMON_SOUND.play()
 
-    if fire_minions_active and current_time - fire_minion_two_timer >= MINION_RESPAWN_COOLDOWN and not fire_minion_two_alive:
+    if fire_minions_active and current_time - fire_minion_two_timer >= MINION_RESPAWN_COOLDOWN and not fire_minion_two_alive and not victory:
         fire_minion_two_alive = True
+        MINION_SUMMON_SOUND.play()
 
     if minion_two_alive and not victory:
         if minion_two_left:
@@ -1081,6 +1087,7 @@ def boss_health_manager():
                 boss_immunity = True
                 lightning_bolt_left.remove(lightning_hitbox_left)
         if boss_immunity:
+            BOSS_DAMAGE_SOUND.play()
             boss_immunity_timer = current_time
             boss_health_points.clear()
             boss_health_x = BOSS_HEALTH_X
@@ -1339,9 +1346,6 @@ def main():
     pause()
     while run:
         current_time = pygame.time.get_ticks() - time_discrepancy
-        print("Time dis: %d" % (time_discrepancy))
-        print("Current time: %d" % (current_time))
-        print("Ticks: %d" % (pygame.time.get_ticks()))
         clock.tick(FPS)
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
