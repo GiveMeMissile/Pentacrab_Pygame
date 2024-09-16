@@ -4,3 +4,4 @@ Teleport: In order to teleport you use the arrow keys, Up arrow teleports you up
 Lightning pulse attack: you use the E key in order to activate the lightning pulse attack
 Lightning bolt attack: You press the space bar in order to fire a lightning bolt projectile.
 Lightning bolt directions: You change the direction you fire the lightning bolt by using both the left and right control keys to change the direction you shoot them.
+You can press the escape key in order to pause the game.
