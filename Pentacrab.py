@@ -96,7 +96,7 @@ BOSS_DIVE_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Boss_dive_sound.mp3")
 BOSS_TRACTOR_BEAM_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Tractor_beam_sound.mp3")
 MINION_SUMMON_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Minion_summon_sound.ogg")
 BOSS_DAMAGE_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Pentacrab_damage.mp3")
-TRACKINGGRAM_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Trackinggram_sound.mp3")
+PENTAGRAM_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Trackinggram_sound.mp3")
 
 # Health Spaghetti
 HEALTH_SPAGHETTI_WIDTH, HEALTH_SPAGHETTI_HEIGHT = 80, 60
@@ -126,6 +126,7 @@ BOSS_HITBOX = pygame.Rect(X - 50, BOSS_Y, BOSS_WIDTH, BOSS_HEIGHT)
 BOSS_MOVEMENT = 5
 BOSS_HEALTH = 300
 BOSS_HEALTH_X, BOSS_HEALTH_Y = WIDTH / 4, 40
+BOSS_REGEN = 10
 boss_health_points = []
 
 BOSS_CONTACT_DAMAGE = 3
@@ -178,13 +179,16 @@ tractor_beams = []
 BOSS_TRACTOR_BEAM = pygame.transform.scale(pygame.image.load(os.path.join
 ("Pentacrab_Assets", "Tractor_beam.png")), (TRACTOR_BEAM_WIDTH, TRACTOR_BEAM_HEIGHT))
 
-TRACKINGGRAM_WIDTH, TRACKINGGRAM_HEIGHT = 50, 50
-TRACKINGGRAM_DELAY = 500
-TRACKINGGRAM_COOLDOWN = 1500
-trackinggrams = []
+PENTAGRAM_WIDTH, PENTAGRAM_HEIGHT = 50, 50
+PENTAGRAM_MOVEMENT = 5
+PENTAGRAM_DELAY = 500
+PENTAGRAM_COOLDOWN = 1500
+PENTAGRAM_DAMAGE = 1
+PENTAGRAM_RESUMMON = 2500
+pentagrams = []
 
-TRACKINGGRAM_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join
-("Pentacrab_Assets", "Pentagram.png")), (TRACKINGGRAM_WIDTH, TRACKINGGRAM_HEIGHT))
+PENTAGRAM_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join
+("Pentacrab_Assets", "Pentagram.png")), (PENTAGRAM_WIDTH, PENTAGRAM_HEIGHT))
 
 BOSS_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Pentacrab.png")),
                                     (BOSS_WIDTH + 40, BOSS_HEIGHT + 30))
@@ -243,6 +247,7 @@ def reset():
     left_bullets.clear()
     Health_spaghetti.clear()
     tractor_beams.clear()
+    pentagrams.clear()
     for _ in range(boss_health):
         boss_health_point = pygame.Rect(boss_health_x, BOSS_HEALTH_Y, HEALTH_POINT_WIDTH, HEALTH_POINT_HEIGHT)
         boss_health_x += HEALTH_POINT_WIDTH
@@ -336,8 +341,8 @@ def draw():
     for laser_warning in boss_laser_warning:
         WINDOW.blit(LASER_WARNING_IMAGE, (laser_warning.x, laser_warning.y))
 
-    for trackinggram in trackinggrams:
-        WINDOW.blit(TRACKINGGRAM_IMAGE, (trackinggram.x, trackinggram.y))
+    for pentagram in pentagrams:
+        WINDOW.blit(PENTAGRAM_IMAGE, (pentagram.x, pentagram.y))
 
     if minion_two_alive and not victory:
         if minion_two_left:
@@ -586,6 +591,40 @@ def boss_movement():
         if HEIGHT - BOSS_HEIGHT <= BOSS_HITBOX.y:
             boss_down = False
 
+def pentagram_attack_handler():
+    global pentagram_resummon, pentagram_resummon_cooldown
+    for pentagram in pentagrams:
+        for lightning_hitbox_up in lightning_bolt_up:
+            if pentagram.colliderect(lightning_hitbox_up):
+                pentagrams.remove(pentagram)
+                lightning_bolt_up.remove(lightning_hitbox_up)
+        for lightning_hitbox_down in lightning_bolt_down:
+            if pentagram.colliderect(lightning_hitbox_down):
+                pentagrams.remove(pentagram)
+                lightning_bolt_down.remove(lightning_hitbox_down)
+        for lightning_hitbox_left in lightning_bolt_left:
+            if pentagram.colliderect(lightning_hitbox_left):
+                pentagrams.remove(pentagram)
+                lightning_bolt_left.remove(lightning_hitbox_left)
+        for lightning_hitbox_right in lightning_bolt_right:
+            if pentagram.colliderect(lightning_hitbox_right):
+                pentagrams.remove(pentagram)
+                lightning_bolt_right.remove(lightning_hitbox_right)
+        for portal_hitbox in tp_hitbox:
+            if pentagram.colliderect(portal_hitbox):
+                pentagrams.remove(pentagram)
+        for aura_hitbox in aura:
+            if pentagram.colliderect(aura_hitbox):
+                pentagrams.remove(pentagram)
+
+    if pentagram_resummon and not boss_side_attack and not pentagram_active and not victory:
+        if current_time - pentagram_resummon_cooldown >= PENTAGRAM_RESUMMON:
+            pentagram_resummon_cooldown = current_time
+            pentagram = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH / 2 - PENTAGRAM_WIDTH / 2,
+                BOSS_HITBOX.y + BOSS_HEIGHT, PENTAGRAM_WIDTH, PENTAGRAM_HEIGHT)
+            pentagrams.append(pentagram)
+            PENTAGRAM_SOUND.play()
+
 def boss_attack_movement():
     for bullet in boss_bullets:
         bullet.y += BULLET_SPEED
@@ -611,6 +650,16 @@ def boss_attack_movement():
         tractor_beam.x = BOSS_HITBOX.x
         tractor_beam.y = BOSS_HITBOX.y + BOSS_HEIGHT/2
 
+    for pentagram in pentagrams:
+        if pentagram.x <= HITBOX.x:
+            pentagram.x += PENTAGRAM_MOVEMENT
+        elif pentagram.x >= HITBOX.x + HITBOX_WIDTH/2:
+            pentagram.x -= PENTAGRAM_MOVEMENT
+
+        if pentagram.y <= HITBOX.y:
+            pentagram.y += PENTAGRAM_MOVEMENT
+        elif pentagram.y >= HITBOX.y - HEIGHT/2:
+            pentagram.y -= PENTAGRAM_MOVEMENT
 
 def player_attack_handler():
     global aura_attack, aura_create, aura_cooldown, aura_cooldown_timer, aura_pulse_on, \
@@ -688,14 +737,13 @@ def boss_attack_handler():
         boss_attack_number, boss_dive_attack, boss_dive_timer, dive_start, boss_dive_down, \
         boss_side_timer, boss_side_right, boss_side_attack, boss_tracking, side_attack_delayed, \
         side_attack_delayed_2, boss_down, side_charge, boss_side_left, tractor_beam_active, tractor_beam_attack,\
-        tractor_beam_cooldown, tractor_beam_timer, dive_sound, trackinggram_delay, trackinggram_cooldown, \
-        trackinggram_active
+        tractor_beam_cooldown, tractor_beam_timer, dive_sound, pentagram_delay, pentagram_cooldown, \
+        pentagram_active
     if boss_attack and not victory:
 
         if not initialized_attack and not attack_end:
             initialized_attack = True
-            #attack_number = random.randint(1, boss_attack_number)
-            attack_number = 5
+            attack_number = random.randint(1, boss_attack_number)
 
         # Bullet Attack
         if attack_number == 1 and initialized_attack and not side_bullet:
@@ -843,23 +891,23 @@ def boss_attack_handler():
                 attack_end = True
                 tractor_beam_active = False
 
-        # Trackinggram attack
+        # Pentagram attack
         if attack_number == 5 and initialized_attack:
-            if not trackinggram_active and current_time - trackinggram_cooldown >= TRACKINGGRAM_COOLDOWN:
-                trackinggram_delay = 0
-                trackinggram_active = True
-            if current_time - trackinggram_delay >= TRACKINGGRAM_DELAY and trackinggram_active:
+            if not pentagram_active and current_time - pentagram_cooldown >= PENTAGRAM_COOLDOWN:
+                pentagram_delay = 0
+                pentagram_active = True
+            if current_time - pentagram_delay >= PENTAGRAM_DELAY and pentagram_active:
                 attack_redo += 1
-                trackinggram = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH / 2 - TRACKINGGRAM_WIDTH/2,
-                    BOSS_HITBOX.y + BOSS_HEIGHT, TRACKINGGRAM_WIDTH, TRACKINGGRAM_HEIGHT)
-                trackinggrams.append(trackinggram)
-                trackinggram_delay = current_time
-                TRACKINGGRAM_SOUND.play()
-            if (attack_redo == 5 or attack_redo == 10) and trackinggram_active:
-                trackinggram_cooldown = current_time
-                trackinggram_active = False
+                pentagram = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH / 2 - PENTAGRAM_WIDTH/2,
+                    BOSS_HITBOX.y + BOSS_HEIGHT, PENTAGRAM_WIDTH, PENTAGRAM_HEIGHT)
+                pentagrams.append(pentagram)
+                pentagram_delay = current_time
+                PENTAGRAM_SOUND.play()
+            if (attack_redo == 5 or attack_redo == 10) and pentagram_active:
+                pentagram_cooldown = current_time
+                pentagram_active = False
             if attack_redo == 15:
-                trackinggram_active = False
+                pentagram_active = False
                 attack_end = True
 
         # End boss attack
@@ -1090,7 +1138,8 @@ def minion_handler():
 def boss_health_manager():
     global boss_health, victory, boss_immunity, boss_immunity_timer, boss_health_change, \
         boss_attack_number, attack_number, initialized_attack, boss_tracking, side_bullet, \
-        fire_minions_active, fire_minion_one_timer, fire_minion_two_timer
+        fire_minions_active, fire_minion_one_timer, fire_minion_two_timer, pentagram_resummon, \
+        pentagram_resummon_cooldown
     if not boss_immunity:
         for portal_hitbox in tp_hitbox:
             if BOSS_HITBOX.colliderect(portal_hitbox):
@@ -1120,6 +1169,18 @@ def boss_health_manager():
                 boss_health -= LIGHTNING_BOLT_DAMAGE
                 boss_immunity = True
                 lightning_bolt_left.remove(lightning_hitbox_left)
+        for spaghetti_hitbox in Health_spaghetti:
+            if BOSS_HITBOX.colliderect(spaghetti_hitbox):
+                Health_spaghetti.remove(spaghetti_hitbox)
+                boss_health += BOSS_REGEN
+                boss_health_points.clear()
+                SPAGHETTI_EAT_SOUND.play()
+                boss_health_x = BOSS_HEALTH_X
+                for _ in range(boss_health):
+                    boss_health_point = pygame.Rect(boss_health_x, BOSS_HEALTH_Y, HEALTH_POINT_WIDTH,
+                                                    HEALTH_POINT_HEIGHT)
+                    boss_health_x += HEALTH_POINT_WIDTH
+                    boss_health_points.append(boss_health_point)
         if boss_immunity:
             BOSS_DAMAGE_SOUND.play()
             boss_immunity_timer = current_time
@@ -1143,10 +1204,14 @@ def boss_health_manager():
         fire_minions_active = True
         fire_minion_one_timer = current_time
         fire_minion_two_timer = current_time
-    if boss_health <= BOSS_HEALTH/2 and boss_attack_number <= 4:
+    if boss_health <= BOSS_HEALTH/2 and boss_attack_number <= 4 and not boss_attack:
         boss_attack_number = 5
         initialized_attack = True
         attack_number = 5
+    if boss_health <= BOSS_HEALTH / 3 and not pentagram_resummon:
+        pentagram_resummon = True
+        pentagram_resummon_cooldown = current_time
+
     if boss_health <= BOSS_HEALTH / 3 and not side_bullet and not boss_attack:
         side_bullet = True
         attack_number = 1
@@ -1208,6 +1273,12 @@ def player_health_manager():
                                                       HEALTH_POINT_HEIGHT)
                     player_health_x += HEALTH_POINT_ADDITION
                     player_health_points.append(player_health_point)
+        for pentagram in pentagrams:
+            if pentagram.colliderect(HITBOX):
+                player_immunity = True
+                player_health -= PENTAGRAM_DAMAGE
+                pentagrams.remove(pentagram)
+                DAMAGE_SOUND.play()
         for laser_hitbox in boss_laser_hitbox:
             if laser_hitbox.colliderect(HITBOX) and not victory:
                 player_immunity = True
@@ -1256,7 +1327,7 @@ def health_spaghetti_handler():
         spaghetti_cooldown = False
     if spaghetti_activate and len(Health_spaghetti) <= 3:
         spaghetti_x = random.randint(0, WIDTH - HEALTH_SPAGHETTI_WIDTH)
-        spaghetti_y = random.randint(BOSS_Y, HEIGHT - HEALTH_SPAGHETTI_HEIGHT)
+        spaghetti_y = random.randint(BOSS_Y + 50, HEIGHT - HEALTH_SPAGHETTI_HEIGHT)
         spaghetti_hitbox = pygame.Rect(spaghetti_x, spaghetti_y, HEALTH_SPAGHETTI_WIDTH, HEALTH_SPAGHETTI_HEIGHT)
         Health_spaghetti.append(spaghetti_hitbox)
         spaghetti_activate = False
@@ -1282,12 +1353,14 @@ def main():
         fire_minion_two_right, fire_minions_attack_delay, minion_fire_active, \
         fire_minions_fire_amount, fire_minion_one_fire_delay, fire_minion_two_fire_delay, \
         tractor_beam_active, tractor_beam_attack, tractor_beam_cooldown, tractor_beam_timer, \
-        dive_sound, paused, time_discrepancy, clock, trackinggram_delay, trackinggram_cooldown, \
-        trackinggram_active
+        dive_sound, paused, time_discrepancy, clock, pentagram_delay, pentagram_cooldown, \
+        pentagram_active, pentagram_resummon, pentagram_resummon_cooldown
     current_time = pygame.time.get_ticks()
-    trackinggram_active = False
-    trackinggram_delay = 99999999
-    trackinggram_cooldown = current_time
+    pentagram_resummon_cooldown = 99999999
+    pentagram_resummon = False
+    pentagram_active = False
+    pentagram_delay = 99999999
+    pentagram_cooldown = current_time
     paused = True
     dive_sound = False
     time_discrepancy = pygame.time.get_ticks()
@@ -1472,6 +1545,7 @@ def main():
         boss_attack_handler()
         boss_attack_movement()
         player_attack_handler()
+        pentagram_attack_handler()
         minion_handler()
         health_spaghetti_handler()
         boss_health_manager()
