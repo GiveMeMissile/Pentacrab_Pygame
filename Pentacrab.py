@@ -738,12 +738,17 @@ def boss_attack_handler():
         boss_side_timer, boss_side_right, boss_side_attack, boss_tracking, side_attack_delayed, \
         side_attack_delayed_2, boss_down, side_charge, boss_side_left, tractor_beam_active, tractor_beam_attack,\
         tractor_beam_cooldown, tractor_beam_timer, dive_sound, pentagram_delay, pentagram_cooldown, \
-        pentagram_active
+        pentagram_active, repeat_attack
     if boss_attack and not victory:
 
         if not initialized_attack and not attack_end:
             initialized_attack = True
             attack_number = random.randint(1, boss_attack_number)
+            if repeat_attack == attack_number:
+                if attack_number == 1:
+                    attack_number += 1
+                else:
+                    attack_number -= 1
 
         # Bullet Attack
         if attack_number == 1 and initialized_attack and not side_bullet:
@@ -917,6 +922,7 @@ def boss_attack_handler():
             initialized_attack = False
             attack_end = False
             boss_bullet_warning.clear()
+            repeat_attack = attack_number
             attack_number = -1
             attack_redo = 0
     if current_time - boss_attack_timer >= BOSS_ATTACK_DELAY and not boss_attack:
@@ -1354,7 +1360,8 @@ def main():
         fire_minions_fire_amount, fire_minion_one_fire_delay, fire_minion_two_fire_delay, \
         tractor_beam_active, tractor_beam_attack, tractor_beam_cooldown, tractor_beam_timer, \
         dive_sound, paused, time_discrepancy, clock, pentagram_delay, pentagram_cooldown, \
-        pentagram_active, pentagram_resummon, pentagram_resummon_cooldown
+        pentagram_active, pentagram_resummon, pentagram_resummon_cooldown, repeat_attack
+    repeat_attack = 0
     current_time = pygame.time.get_ticks()
     pentagram_resummon_cooldown = 99999999
     pentagram_resummon = False
