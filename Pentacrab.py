@@ -96,6 +96,7 @@ BOSS_DIVE_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Boss_dive_sound.mp3")
 BOSS_TRACTOR_BEAM_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Tractor_beam_sound.mp3")
 MINION_SUMMON_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Minion_summon_sound.ogg")
 BOSS_DAMAGE_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Pentacrab_damage.mp3")
+TRACKINGGRAM_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Trackinggram_sound.mp3")
 
 # Health Spaghetti
 HEALTH_SPAGHETTI_WIDTH, HEALTH_SPAGHETTI_HEIGHT = 80, 60
@@ -176,6 +177,14 @@ tractor_beams = []
 
 BOSS_TRACTOR_BEAM = pygame.transform.scale(pygame.image.load(os.path.join
 ("Pentacrab_Assets", "Tractor_beam.png")), (TRACTOR_BEAM_WIDTH, TRACTOR_BEAM_HEIGHT))
+
+TRACKINGGRAM_WIDTH, TRACKINGGRAM_HEIGHT = 50, 50
+TRACKINGGRAM_DELAY = 500
+TRACKINGGRAM_COOLDOWN = 1500
+trackinggrams = []
+
+TRACKINGGRAM_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join
+("Pentacrab_Assets", "Pentagram.png")), (TRACKINGGRAM_WIDTH, TRACKINGGRAM_HEIGHT))
 
 BOSS_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Pentacrab.png")),
                                     (BOSS_WIDTH + 40, BOSS_HEIGHT + 30))
@@ -321,10 +330,14 @@ def draw():
     for left_bullet in left_bullets:
         WINDOW.blit(LEFT_BULLET_IMAGE, (left_bullet.x, left_bullet.y))
 
+
     for laser_hitbox in boss_laser_hitbox:
         WINDOW.blit(LASER_IMAGE, (laser_hitbox.x - 180 / 2 + 10, laser_hitbox.y + 5))
     for laser_warning in boss_laser_warning:
         WINDOW.blit(LASER_WARNING_IMAGE, (laser_warning.x, laser_warning.y))
+
+    for trackinggram in trackinggrams:
+        WINDOW.blit(TRACKINGGRAM_IMAGE, (trackinggram.x, trackinggram.y))
 
     if minion_two_alive and not victory:
         if minion_two_left:
@@ -675,12 +688,14 @@ def boss_attack_handler():
         boss_attack_number, boss_dive_attack, boss_dive_timer, dive_start, boss_dive_down, \
         boss_side_timer, boss_side_right, boss_side_attack, boss_tracking, side_attack_delayed, \
         side_attack_delayed_2, boss_down, side_charge, boss_side_left, tractor_beam_active, tractor_beam_attack,\
-        tractor_beam_cooldown, tractor_beam_timer, dive_sound
+        tractor_beam_cooldown, tractor_beam_timer, dive_sound, trackinggram_delay, trackinggram_cooldown, \
+        trackinggram_active
     if boss_attack and not victory:
 
         if not initialized_attack and not attack_end:
             initialized_attack = True
-            attack_number = random.randint(1, boss_attack_number)
+            #attack_number = random.randint(1, boss_attack_number)
+            attack_number = 5
 
         # Bullet Attack
         if attack_number == 1 and initialized_attack and not side_bullet:
@@ -827,6 +842,25 @@ def boss_attack_handler():
             if attack_redo >= 3:
                 attack_end = True
                 tractor_beam_active = False
+
+        # Trackinggram attack
+        if attack_number == 5 and initialized_attack:
+            if not trackinggram_active and current_time - trackinggram_cooldown >= TRACKINGGRAM_COOLDOWN:
+                trackinggram_delay = 0
+                trackinggram_active = True
+            if current_time - trackinggram_delay >= TRACKINGGRAM_DELAY and trackinggram_active:
+                attack_redo += 1
+                trackinggram = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH / 2 - TRACKINGGRAM_WIDTH/2,
+                    BOSS_HITBOX.y + BOSS_HEIGHT, TRACKINGGRAM_WIDTH, TRACKINGGRAM_HEIGHT)
+                trackinggrams.append(trackinggram)
+                trackinggram_delay = current_time
+                TRACKINGGRAM_SOUND.play()
+            if (attack_redo == 5 or attack_redo == 10) and trackinggram_active:
+                trackinggram_cooldown = current_time
+                trackinggram_active = False
+            if attack_redo == 15:
+                trackinggram_active = False
+                attack_end = True
 
         # End boss attack
         if initialized_attack and attack_end:
@@ -1109,6 +1143,10 @@ def boss_health_manager():
         fire_minions_active = True
         fire_minion_one_timer = current_time
         fire_minion_two_timer = current_time
+    if boss_health <= BOSS_HEALTH/2 and boss_attack_number <= 4:
+        boss_attack_number = 5
+        initialized_attack = True
+        attack_number = 5
     if boss_health <= BOSS_HEALTH / 3 and not side_bullet and not boss_attack:
         side_bullet = True
         attack_number = 1
@@ -1244,11 +1282,15 @@ def main():
         fire_minion_two_right, fire_minions_attack_delay, minion_fire_active, \
         fire_minions_fire_amount, fire_minion_one_fire_delay, fire_minion_two_fire_delay, \
         tractor_beam_active, tractor_beam_attack, tractor_beam_cooldown, tractor_beam_timer, \
-        dive_sound, paused, time_discrepancy, clock
+        dive_sound, paused, time_discrepancy, clock, trackinggram_delay, trackinggram_cooldown, \
+        trackinggram_active
+    current_time = pygame.time.get_ticks()
+    trackinggram_active = False
+    trackinggram_delay = 99999999
+    trackinggram_cooldown = current_time
     paused = True
     dive_sound = False
     time_discrepancy = pygame.time.get_ticks()
-    current_time = pygame.time.get_ticks()
     tractor_beam_cooldown = 99999999
     tractor_beam_timer = 99999999
     tractor_beam_active = False
