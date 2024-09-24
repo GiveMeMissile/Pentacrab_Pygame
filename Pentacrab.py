@@ -74,6 +74,18 @@ AURA_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_As
 AURA_COOLDOWN_IMAGE = pygame.transform.scale(
     pygame.image.load(os.path.join("Pentacrab_Assets", "Electic_pulse_cooldown.png")), (HITBOX_WIDTH, HITBOX_HEIGHT))
 
+SHIELD_WIDTH, SHIELD_HEIGHT = 100, 100
+SHIELD_DISCREPANCY = 30
+SHIELD_BREAK = 5000
+SHIELD_PROJECTILE_DAMAGE = 100
+SHIELD_COOLDOWN = 7000
+shields = []
+
+SHIELD_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets",
+"Shield.png")), (SHIELD_WIDTH + SHIELD_DISCREPANCY, SHIELD_HEIGHT + SHIELD_DISCREPANCY))
+SHIELD_DOWN_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets",
+                                "Shield_down.png")), (HITBOX_HEIGHT, HITBOX_HEIGHT))
+
 X = WIDTH // 2
 Y = HEIGHT - HITBOX_HEIGHT
 HITBOX = pygame.Rect(X, Y, HITBOX_WIDTH, HITBOX_HEIGHT)
@@ -100,6 +112,7 @@ MINION_SUMMON_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Minion_summon_sound.o
 BOSS_DAMAGE_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Pentacrab_damage.mp3")
 PENTAGRAM_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Trackinggram_sound.mp3")
 BLACKHOLE_SUMMON_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Blackhole_summon_sound.mp3")
+SHIELD_BLOCK_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Shield_impact_sound.mp3")
 
 # Health Spaghetti
 HEALTH_SPAGHETTI_WIDTH, HEALTH_SPAGHETTI_HEIGHT = 80, 60
@@ -263,11 +276,7 @@ def reset():
     pentagrams.clear()
     blackhole_hitboxs.clear()
     boss_health_visual()
-    player_health_x = PLAYER_HEALTH_X
-    for _ in range(player_health):
-        player_health_point = pygame.Rect(player_health_x, PLAYER_HEALTH_Y, HEALTH_POINT_ADDITION, HEALTH_POINT_HEIGHT)
-        player_health_x += HEALTH_POINT_ADDITION
-        player_health_points.append(player_health_point)
+    player_health_visual()
 
 def pause():
     global current_time, clock, paused, run, time_discrepancy
@@ -298,6 +307,9 @@ def draw():
 
     for platform_location_x, platform_location_y in platforms:
         WINDOW.blit(PLATFORM, (platform_location_x, platform_location_y))
+
+    if not shield_active:
+        WINDOW.blit(SHIELD_DOWN_IMAGE, (HITBOX.x - HITBOX_HEIGHT/2 + HITBOX_WIDTH/2, HITBOX.y))
 
     if lightning_up:
         WINDOW.blit(INDICATOR_IMAGE_UP, (HITBOX.x, HITBOX.y - 70))
@@ -389,6 +401,7 @@ def draw():
 
     for aura_hitbox in aura:
         WINDOW.blit(AURA_IMAGE, (aura_hitbox.x, aura_hitbox.y))
+
     if not jump:
         if left:
             WINDOW.blit(PLAYER_LEFT, (HITBOX.x - 15, HITBOX.y - 15))
@@ -401,6 +414,9 @@ def draw():
             WINDOW.blit(PLAYER_JUMP_RIGHT, (HITBOX.x - PLAYER_DIFFERENCE, HITBOX.y - PLAYER_DIFFERENCE))
     if aura_cooldown:
         WINDOW.blit(AURA_COOLDOWN_IMAGE, (HITBOX.x, HITBOX.y))
+
+    for shield in shields:
+        WINDOW.blit(SHIELD_IMAGE, (shield.x - SHIELD_DISCREPANCY/2, shield.y - SHIELD_DISCREPANCY))
 
     for blackhole_hitbox in blackhole_hitboxs:
         WINDOW.blit(BLACKHOLE_IMAGE, (blackhole_hitbox.x - BLACKHOLE_LENIENCY/2 - 5,
@@ -685,6 +701,67 @@ def boss_attack_movement():
             pentagram.y += PENTAGRAM_MOVEMENT
         elif pentagram.y >= HITBOX.y - HEIGHT/2:
             pentagram.y -= PENTAGRAM_MOVEMENT
+
+def player_shield_manager():
+    global shield_break, shield_timer, shield_active, shield_on, shield_cooldown, shield_buildup
+    if not shield_active and current_time - shield_cooldown >= SHIELD_COOLDOWN:
+        shield_active = True
+
+    if shield_active:
+        shield_timer = current_time - shield_break
+        shield_on = False
+        shields.clear()
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_RSHIFT] or keys[pygame.K_LSHIFT]:
+            shield = pygame.Rect(HITBOX.x - SHIELD_WIDTH/2 + HITBOX_WIDTH/2, HITBOX.y -
+                    (SHIELD_HEIGHT - HITBOX_HEIGHT)/2, SHIELD_WIDTH, SHIELD_HEIGHT)
+            shields.append(shield)
+            shield_on = True
+
+    for shield in shields:
+        if shield.colliderect(BOSS_HITBOX):
+            shield_break += current_time - shield_buildup
+        elif shield.colliderect(MINION_ONE_HITBOX):
+            shield_break += current_time - shield_buildup
+        elif shield.colliderect(MINION_TWO_HITBOX):
+            shield_break += current_time - shield_buildup
+        for laser_hitbox in boss_laser_hitbox:
+            if shield.colliderect(laser_hitbox):
+                shield_break += current_time - shield_buildup
+
+        for pentagram in pentagrams:
+            if shield.colliderect(pentagram):
+                pentagrams.remove(pentagram)
+                shield_break += SHIELD_PROJECTILE_DAMAGE*2
+                SHIELD_BLOCK_SOUND.play()
+        for bullet in boss_bullets:
+            if shield.colliderect(bullet):
+                boss_bullets.remove(bullet)
+                shield_break += SHIELD_PROJECTILE_DAMAGE
+                SHIELD_BLOCK_SOUND.play()
+        for left_bullet in left_bullets:
+            if shield.colliderect(left_bullet):
+                left_bullets.remove(left_bullet)
+                shield_break += SHIELD_PROJECTILE_DAMAGE
+                SHIELD_BLOCK_SOUND.play()
+        for right_bullet in right_bullets:
+            if shield.colliderect(right_bullet):
+                right_bullets.remove(right_bullet)
+                shield_break += SHIELD_BREAK
+                SHIELD_BLOCK_SOUND.play()
+
+        for blackhole_hitbox in blackhole_hitboxs:
+            if shield.colliderect(blackhole_hitbox):
+                shields.remove(shield)
+                shield_break = 5000
+
+    if current_time - shield_timer >= SHIELD_BREAK and shield_active:
+        shields.clear()
+        shield_active = False
+        shield_on = False
+        shield_cooldown = current_time
+        shield_break = 0
+    shield_buildup = current_time
 
 def player_attack_handler():
     global aura_attack, aura_create, aura_cooldown, aura_cooldown_timer, aura_pulse_on, \
@@ -1310,7 +1387,7 @@ def boss_health_manager():
 
 def player_health_manager():
     global player_health, player_immunity, player_immunity_timer
-    if not player_immunity:
+    if not player_immunity and not shield_on:
         if HITBOX.colliderect(BOSS_HITBOX):
             player_health -= BOSS_CONTACT_DAMAGE
             player_immunity = True
@@ -1489,7 +1566,14 @@ def main():
         tractor_beam_active, tractor_beam_attack, tractor_beam_cooldown, tractor_beam_timer, \
         dive_sound, paused, time_discrepancy, clock, pentagram_delay, pentagram_cooldown, \
         pentagram_active, pentagram_resummon, pentagram_resummon_cooldown, repeat_attack, \
-        blackhole_active, blackhole_summon_delay, boss_center
+        blackhole_active, blackhole_summon_delay, boss_center, shield_break, shield_timer, \
+        shield_active, shield_on, shield_cooldown, shield_buildup
+    shield_buildup = 99999999
+    shield_break = 0
+    shield_timer = 99999999
+    shield_active = True
+    shield_on = False
+    shield_cooldown = 99999999
     boss_center = False
     blackhole_summon_delay = 0
     blackhole_active = False
@@ -1613,23 +1697,23 @@ def main():
                     JUMP_SOUND.play()
                     vertical_velocity = JUMP_HEIGHT
 
-                if event.key == pygame.K_UP and not tp_cooldown:
+                if event.key == pygame.K_UP and not tp_cooldown and not shield_on:
                     tele_up = True
                     tp_delay = current_time
                     tp_cooldown = True
                     TELEPORT_SOUND.play()
-                if event.key == pygame.K_LEFT and not tp_cooldown:
+                if event.key == pygame.K_LEFT and not tp_cooldown and not shield_on:
                     tele_left = True
                     tp_delay = current_time
                     tp_cooldown = True
                     TELEPORT_SOUND.play()
-                if event.key == pygame.K_RIGHT and not tp_cooldown:
+                if event.key == pygame.K_RIGHT and not tp_cooldown and not shield_on:
                     tele_right = True
                     tp_delay = current_time
                     tp_cooldown = True
                     TELEPORT_SOUND.play()
 
-                if event.key == pygame.K_e and not aura_cooldown:
+                if event.key == pygame.K_e and not aura_cooldown and not shield_on:
                     aura_attack = True
                     aura_cooldown = True
                     aura_cooldown_timer = current_time
@@ -1671,7 +1755,7 @@ def main():
                         lightning_left = False
                         lightning_up = True
 
-                if event.key == pygame.K_SPACE and not lightning_cooldown:
+                if event.key == pygame.K_SPACE and not lightning_cooldown and not shield_on:
                     LIGHTNING_BOLT_SOUND.play()
                     lightning_activate = True
 
@@ -1687,6 +1771,7 @@ def main():
         pentagram_attack_handler()
         minion_handler()
         health_spaghetti_handler()
+        player_shield_manager()
         blackhole_manager()
         boss_health_manager()
         player_health_manager()
