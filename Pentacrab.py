@@ -78,7 +78,8 @@ SHIELD_WIDTH, SHIELD_HEIGHT = 100, 100
 SHIELD_DISCREPANCY = 30
 SHIELD_BREAK = 5000
 SHIELD_PROJECTILE_DAMAGE = 100
-SHIELD_COOLDOWN = 7000
+SHIELD_COOLDOWN = 12500
+SHIELD_REJUV = 400
 shields = []
 
 SHIELD_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets",
@@ -113,6 +114,7 @@ BOSS_DAMAGE_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Pentacrab_damage.mp3")
 PENTAGRAM_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Trackinggram_sound.mp3")
 BLACKHOLE_SUMMON_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Blackhole_summon_sound.mp3")
 SHIELD_BLOCK_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Shield_impact_sound.mp3")
+SHIELD_SHATTER_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Shield_shatter_sound.mp3")
 
 # Health Spaghetti
 HEALTH_SPAGHETTI_WIDTH, HEALTH_SPAGHETTI_HEIGHT = 80, 60
@@ -703,7 +705,8 @@ def boss_attack_movement():
             pentagram.y -= PENTAGRAM_MOVEMENT
 
 def player_shield_manager():
-    global shield_break, shield_timer, shield_active, shield_on, shield_cooldown, shield_buildup
+    global shield_break, shield_timer, shield_active, shield_on, shield_cooldown, \
+        shield_buildup, shield_rejuv
     if not shield_active and current_time - shield_cooldown >= SHIELD_COOLDOWN:
         shield_active = True
 
@@ -713,11 +716,12 @@ def player_shield_manager():
         shields.clear()
         keys = pygame.key.get_pressed()
         if keys[pygame.K_RSHIFT] or keys[pygame.K_LSHIFT]:
+            shield_rejuv = current_time
             shield = pygame.Rect(HITBOX.x - SHIELD_WIDTH/2 + HITBOX_WIDTH/2, HITBOX.y -
                     (SHIELD_HEIGHT - HITBOX_HEIGHT)/2, SHIELD_WIDTH, SHIELD_HEIGHT)
             shields.append(shield)
             shield_on = True
-
+    
     for shield in shields:
         if shield.colliderect(BOSS_HITBOX):
             shield_break += current_time - shield_buildup
@@ -732,7 +736,7 @@ def player_shield_manager():
         for pentagram in pentagrams:
             if shield.colliderect(pentagram):
                 pentagrams.remove(pentagram)
-                shield_break += SHIELD_PROJECTILE_DAMAGE*2
+                shield_break += SHIELD_PROJECTILE_DAMAGE*5
                 SHIELD_BLOCK_SOUND.play()
         for bullet in boss_bullets:
             if shield.colliderect(bullet):
@@ -755,12 +759,26 @@ def player_shield_manager():
                 shields.remove(shield)
                 shield_break = 5000
 
+        for aura_hitbox in aura:
+            if shield.colliderect(aura_hitbox):
+                aura.remove(aura_hitbox)
+        for portal_hitbox in tp_hitbox:
+            if shield.colliderect(portal_hitbox):
+                tp_hitbox.remove(portal_hitbox)
+        
+    if not shield_on and shield_active and shield_break > 0 and current_time - shield_rejuv >= SHIELD_REJUV:
+        shield_break -= SHIELD_REJUV/4
+        shield_rejuv = current_time
+        if shield_break < 0:
+            shield_break = 0
+
     if current_time - shield_timer >= SHIELD_BREAK and shield_active:
         shields.clear()
         shield_active = False
         shield_on = False
         shield_cooldown = current_time
         shield_break = 0
+        SHIELD_SHATTER_SOUND.play()
     shield_buildup = current_time
 
 def player_attack_handler():
@@ -1567,7 +1585,8 @@ def main():
         dive_sound, paused, time_discrepancy, clock, pentagram_delay, pentagram_cooldown, \
         pentagram_active, pentagram_resummon, pentagram_resummon_cooldown, repeat_attack, \
         blackhole_active, blackhole_summon_delay, boss_center, shield_break, shield_timer, \
-        shield_active, shield_on, shield_cooldown, shield_buildup
+        shield_active, shield_on, shield_cooldown, shield_buildup, shield_rejuv
+    shield_rejuv = 99999999
     shield_buildup = 99999999
     shield_break = 0
     shield_timer = 99999999
