@@ -18,6 +18,7 @@ FPS = 60
 JUMP_HEIGHT = 13
 PLAYER_MAX_JUMP_VELOCITY = 10
 PLAYER_HEALTH = 30
+MAX_PLAYER_HEALTH = 45
 GRAVITY = 0.5
 HITBOX_WIDTH, HITBOX_HEIGHT = 20, 70
 velocity = 0
@@ -77,9 +78,12 @@ AURA_COOLDOWN_IMAGE = pygame.transform.scale(
 SHIELD_WIDTH, SHIELD_HEIGHT = 100, 100
 SHIELD_DISCREPANCY = 30
 SHIELD_BREAK = 5000
-SHIELD_PROJECTILE_DAMAGE = 100
+SHIELD_PROJECTILE_DAMAGE = 200
 SHIELD_COOLDOWN = 12500
 SHIELD_REJUV = 400
+SHIELD_HEALTH_X, SHIELD_HEALTH_Y = 50, 80
+SHIELD_HEALTH_WIDTH, SHIELD_HEALTH_HEIGHT = ((WIDTH/2)/(SHIELD_BREAK/10))/2, 10
+shield_health_points = []
 shields = []
 
 SHIELD_IMAGE = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets",
@@ -116,6 +120,7 @@ BLACKHOLE_SUMMON_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Blackhole_summon_s
 SHIELD_BLOCK_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Shield_impact_sound.mp3")
 SHIELD_SHATTER_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Shield_shatter_sound.mp3")
 BOSS_MUSIC = pygame.mixer.Sound("Pentacrab_Assets/Boss_music.mp3")
+FINAL_BOSS_SONG = pygame.mixer.Sound("Pentacrab_Assets/Final_boss_music.mp3")
 SONG_LENGTH = 155000
 
 # Health Spaghetti
@@ -254,10 +259,12 @@ IMMUNITY = 500
 HEALTH_POINT_WIDTH, HEALTH_POINT_HEIGHT = (WIDTH / 2) / BOSS_HEALTH, 10
 HEALTH_POINT_ADDITION = (WIDTH / 3) / PLAYER_HEALTH
 RED = (255, 100, 100)
-BLUE = (0, 0, 255)
+BLUE = (0, 100, 255)
+PURPLE = (100, 0, 255)
 
 def reset():
     global attack_end, attack_redo
+    FINAL_BOSS_SONG.stop()
     HITBOX.x = WIDTH / 2 + HITBOX_WIDTH / 2
     HITBOX.y = HEIGHT - HITBOX_HEIGHT
     BOSS_HITBOX.x = WIDTH / 2 - BOSS_WIDTH / 2
@@ -285,6 +292,7 @@ def reset():
     blackhole_hitboxs.clear()
     boss_health_visual()
     player_health_visual()
+    shield_health_visual()
 
 def pause():
     global current_time, clock, paused, run, time_discrepancy
@@ -302,16 +310,20 @@ def pause():
 
 def draw():
     WINDOW.blit(BACKGROUND, (0, 0))
-
+    
+    shield_health_text = HEALTH_FONT.render("Shield Health", 1, (255, 255, 255))
     boss_health_text = HEALTH_FONT.render("Boss Health: " + str(boss_health), 1, (255, 255, 255))
     player_health_text = HEALTH_FONT.render("Player Health: " + str(player_health), 1, (255, 255, 255))
     WINDOW.blit(boss_health_text, (WIDTH / 2 - 110, 0))
     WINDOW.blit(player_health_text, (WIDTH / 2 - 110, 42))
+    WINDOW.blit(shield_health_text, (SHIELD_HEALTH_X + 65, 40))
 
     for boss_health_point in boss_health_points:
         pygame.draw.rect(WINDOW, RED, boss_health_point)
     for player_health_point in player_health_points:
         pygame.draw.rect(WINDOW, BLUE, player_health_point)
+    for shield_health_point in shield_health_points:
+        pygame.draw.rect(WINDOW, PURPLE, shield_health_point)
 
     for platform_location_x, platform_location_y in platforms:
         WINDOW.blit(PLATFORM, (platform_location_x, platform_location_y))
@@ -607,13 +619,13 @@ def boss_movement():
             if laser_active or tractor_beam_active:
                 BOSS_HITBOX.x -= 1
             elif boss_dive_attack:
-                BOSS_HITBOX.x += 3
+                BOSS_HITBOX.x += 5
         elif HITBOX.x < BOSS_HITBOX.x + BOSS_WIDTH / 2:
             BOSS_HITBOX.x -= BOSS_MOVEMENT
             if laser_active or tractor_beam_active:
                 BOSS_HITBOX.x += 1
             elif boss_dive_attack:
-                BOSS_HITBOX.x -= 3
+                BOSS_HITBOX.x -= 5
 
     if boss_side_right:
         if boss_down:
@@ -699,21 +711,26 @@ def boss_attack_movement():
         tractor_beam.y = BOSS_HITBOX.y + BOSS_HEIGHT/2
 
     for pentagram in pentagrams:
-        if pentagram.x <= HITBOX.x:
+        if pentagram.x < HITBOX.x:
             pentagram.x += PENTAGRAM_MOVEMENT
-        elif pentagram.x >= HITBOX.x + HITBOX_WIDTH/2:
+        elif pentagram.x > HITBOX.x + HITBOX_WIDTH/2:
             pentagram.x -= PENTAGRAM_MOVEMENT
 
-        if pentagram.y <= HITBOX.y:
+        if pentagram.y < HITBOX.y:
             pentagram.y += PENTAGRAM_MOVEMENT
-        elif pentagram.y >= HITBOX.y - HEIGHT/2:
+        elif pentagram.y > HITBOX.y - HEIGHT/2:
             pentagram.y -= PENTAGRAM_MOVEMENT
 
 def player_shield_manager():
     global shield_break, shield_timer, shield_active, shield_on, shield_cooldown, \
-        shield_buildup, shield_rejuv
+        shield_buildup, shield_rejuv, shield_revisualize
+
     if not shield_active and current_time - shield_cooldown >= SHIELD_COOLDOWN:
         shield_active = True
+
+    if shield_active and shield_revisualize:
+        shield_revisualize = False
+        shield_health_visual()
 
     if shield_active:
         shield_timer = current_time - shield_break
@@ -730,39 +747,48 @@ def player_shield_manager():
     for shield in shields:
         if shield.colliderect(BOSS_HITBOX):
             shield_break += current_time - shield_buildup
+            shield_health_visual()
         elif shield.colliderect(MINION_ONE_HITBOX):
             shield_break += current_time - shield_buildup
+            shield_health_visual()
         elif shield.colliderect(MINION_TWO_HITBOX):
             shield_break += current_time - shield_buildup
+            shield_health_visual()
         for laser_hitbox in boss_laser_hitbox:
             if shield.colliderect(laser_hitbox):
-                shield_break += current_time - shield_buildup
+                shield_break += (current_time - shield_buildup)*10
+                shield_health_visual()
 
         for pentagram in pentagrams:
             if shield.colliderect(pentagram):
                 pentagrams.remove(pentagram)
                 shield_break += SHIELD_PROJECTILE_DAMAGE*5
                 SHIELD_BLOCK_SOUND.play()
+                shield_health_visual()
         for bullet in boss_bullets:
             if shield.colliderect(bullet):
                 boss_bullets.remove(bullet)
                 shield_break += SHIELD_PROJECTILE_DAMAGE
                 SHIELD_BLOCK_SOUND.play()
+                shield_health_visual()
         for left_bullet in left_bullets:
             if shield.colliderect(left_bullet):
                 left_bullets.remove(left_bullet)
                 shield_break += SHIELD_PROJECTILE_DAMAGE
                 SHIELD_BLOCK_SOUND.play()
+                shield_health_visual()
         for right_bullet in right_bullets:
             if shield.colliderect(right_bullet):
                 right_bullets.remove(right_bullet)
-                shield_break += SHIELD_BREAK
+                shield_break += SHIELD_PROJECTILE_DAMAGE
                 SHIELD_BLOCK_SOUND.play()
+                shield_health_visual()
 
         for blackhole_hitbox in blackhole_hitboxs:
             if shield.colliderect(blackhole_hitbox):
                 shields.remove(shield)
-                shield_break = 5000
+                shield_break = SHIELD_BREAK
+                shield_health_visual()
 
         for aura_hitbox in aura:
             if shield.colliderect(aura_hitbox):
@@ -774,8 +800,10 @@ def player_shield_manager():
     if not shield_on and shield_active and shield_break > 0 and current_time - shield_rejuv >= SHIELD_REJUV:
         shield_break -= SHIELD_REJUV/4
         shield_rejuv = current_time
+        shield_health_visual()
         if shield_break < 0:
             shield_break = 0
+            shield_health_visual()
 
     if current_time - shield_timer >= SHIELD_BREAK and shield_active:
         shields.clear()
@@ -783,7 +811,10 @@ def player_shield_manager():
         shield_on = False
         shield_cooldown = current_time
         shield_break = 0
+        BULLET_FIRE_SOUND.stop()
         SHIELD_SHATTER_SOUND.play()
+        shield_health_points.clear()
+        shield_revisualize = True
     shield_buildup = current_time
 
 def player_attack_handler():
@@ -961,6 +992,7 @@ def boss_attack_handler():
                                             BOSS_WARNING_DIMENSIONS, BOSS_WARNING_DIMENSIONS)
                 boss_laser_warning.append(laser_warning)
             if laser_active and current_time - laser_fire_time >= BOSS_LASER_COOLDOWN and not laser_start:
+                BULLET_FIRE_SOUND.stop()
                 LASER_SOUND.play()
                 laser_start = True
                 laser_hitbox = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH / 2 - 10, BOSS_HITBOX.y + BOSS_HEIGHT, 20, HEIGHT)
@@ -993,6 +1025,7 @@ def boss_attack_handler():
                     BOSS_HITBOX.y = BOSS_Y
                     dive_start = False
             if current_time - boss_dive_timer >= BOSS_DIVE_COOLDOWN and dive_sound:
+                BULLET_FIRE_SOUND.stop()
                 BOSS_DIVE_SOUND.play()
                 dive_sound = False
             if attack_redo >= 4:
@@ -1012,6 +1045,7 @@ def boss_attack_handler():
                                            TRACTOR_BEAM_WIDTH, TRACTOR_BEAM_HEIGHT)
                 tractor_beams.append(tractor_beam)
                 tractor_beam_timer = current_time
+                BULLET_FIRE_SOUND.stop()
                 BOSS_TRACTOR_BEAM_SOUND.play()
             if current_time - tractor_beam_timer >= TRACTOR_BEAM_ATTACK and len(tractor_beams) > 0:
                 tractor_beams.clear()
@@ -1032,6 +1066,7 @@ def boss_attack_handler():
                     BOSS_HITBOX.y + BOSS_HEIGHT, PENTAGRAM_WIDTH, PENTAGRAM_HEIGHT)
                 pentagrams.append(pentagram)
                 pentagram_delay = current_time
+                BULLET_FIRE_SOUND.stop()
                 PENTAGRAM_SOUND.play()
             if (attack_redo == 5 or attack_redo == 10) and pentagram_active:
                 pentagram_cooldown = current_time
@@ -1046,14 +1081,19 @@ def boss_attack_handler():
                 if current_time - blackhole_summon_delay >= BLACKHOLE_SUMMON_DELAY:
                     blackhole_summon_delay = current_time
                     attack_redo += 1
+                    BOSS_MUSIC.stop()
                     if attack_redo == 2:
                         blackhole_hitbox = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH/2 -
                             BLACKHOLE_HITBOX_WIDTH/2, BOSS_HITBOX.y + BOSS_HEIGHT,
                             BLACKHOLE_HITBOX_WIDTH, BLACKHOLE_HITBOX_HEIGHT)
                         blackhole_hitboxs.append(blackhole_hitbox)
                         blackhole_active = True
+                        BULLET_FIRE_SOUND.stop()
                         BLACKHOLE_SUMMON_SOUND.play()
                     elif attack_redo == 3:
+                        BULLET_FIRE_SOUND.stop()
+                        FINAL_BOSS_SONG.play()
+                        FINAL_BOSS_SONG.set_volume(0.25)
                         blackhole_summon_delay = 0
                         attack_end = True
 
@@ -1329,6 +1369,15 @@ def player_health_visual():
         player_health_x += HEALTH_POINT_ADDITION
         player_health_points.append(player_health_point)
 
+def shield_health_visual():
+    shield_x = SHIELD_HEALTH_X
+    shield_health_points.clear()
+    for _ in range(round((SHIELD_BREAK - shield_break)/10)):
+        shield_health_point = pygame.Rect(shield_x, SHIELD_HEALTH_Y, SHIELD_HEALTH_WIDTH + 5,
+                                          SHIELD_HEALTH_HEIGHT)
+        shield_x += SHIELD_HEALTH_WIDTH
+        shield_health_points.append(shield_health_point)
+
 def boss_health_manager():
     global boss_health, victory, boss_immunity, boss_immunity_timer, boss_health_change, \
         boss_attack_number, attack_number, initialized_attack, boss_tracking, side_bullet, \
@@ -1414,6 +1463,9 @@ def boss_health_manager():
         fire_minion_one_warnings.clear()
         fire_minion_two_warnings.clear()
 
+    if victory:
+        boss_health = 0
+
 
 def player_health_manager():
     global player_health, player_immunity, player_immunity_timer
@@ -1445,10 +1497,10 @@ def player_health_manager():
                 player_health_visual()
         for pentagram in pentagrams:
             if pentagram.colliderect(HITBOX):
-                player_immunity = True
                 player_health -= PENTAGRAM_DAMAGE
                 pentagrams.remove(pentagram)
                 DAMAGE_SOUND.play()
+                player_health_visual()
         for laser_hitbox in boss_laser_hitbox:
             if laser_hitbox.colliderect(HITBOX):
                 player_immunity = True
@@ -1488,6 +1540,9 @@ def player_health_manager():
             player_health_visual()
     if current_time - player_immunity_timer >= IMMUNITY and player_immunity:
         player_immunity = False
+
+    if player_health > MAX_PLAYER_HEALTH:
+        player_health = MAX_PLAYER_HEALTH
 
 
 def health_spaghetti_handler():
@@ -1577,13 +1632,14 @@ def blackhole_manager():
 
 def song_manager():
     global song_redo
-    if song_redo == 0 or current_time - song_redo >= SONG_LENGTH + 1000:
+    if song_redo == 0 or current_time - song_redo >= SONG_LENGTH + 1000 and not blackhole_active:
         BOSS_MUSIC.stop()
         BOSS_MUSIC.play()
+        BOSS_MUSIC.set_volume(0.25)
         song_redo = current_time + time_discrepancy
-        print("Callback Ping")
     if victory:
         BOSS_MUSIC.stop()
+        FINAL_BOSS_SONG.stop()
 
 
 def main():
@@ -1609,7 +1665,9 @@ def main():
         dive_sound, paused, time_discrepancy, clock, pentagram_delay, pentagram_cooldown, \
         pentagram_active, pentagram_resummon, pentagram_resummon_cooldown, repeat_attack, \
         blackhole_active, blackhole_summon_delay, boss_center, shield_break, shield_timer, \
-        shield_active, shield_on, shield_cooldown, shield_buildup, shield_rejuv, song_redo
+        shield_active, shield_on, shield_cooldown, shield_buildup, shield_rejuv, song_redo, \
+        shield_revisualize
+    shield_revisualize = False
     song_redo = 0
     shield_rejuv = 99999999
     shield_buildup = 99999999
@@ -1762,6 +1820,7 @@ def main():
                     aura_attack = True
                     aura_cooldown = True
                     aura_cooldown_timer = current_time
+                    BULLET_FIRE_SOUND.stop()
                     ELECTRIC_AURA_SOUND.play()
 
                 if event.key == pygame.K_LCTRL:
