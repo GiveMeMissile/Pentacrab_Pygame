@@ -115,6 +115,8 @@ PENTAGRAM_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Trackinggram_sound.mp3")
 BLACKHOLE_SUMMON_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Blackhole_summon_sound.mp3")
 SHIELD_BLOCK_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Shield_impact_sound.mp3")
 SHIELD_SHATTER_SOUND = pygame.mixer.Sound("Pentacrab_Assets/Shield_shatter_sound.mp3")
+BOSS_MUSIC = pygame.mixer.Sound("Pentacrab_Assets/Boss_music.mp3")
+SONG_LENGTH = 155000
 
 # Health Spaghetti
 HEALTH_SPAGHETTI_WIDTH, HEALTH_SPAGHETTI_HEIGHT = 80, 60
@@ -262,8 +264,12 @@ def reset():
     BOSS_HITBOX.y = BOSS_Y
     MINION_TWO_HITBOX.x = WIDTH - MINION_WIDTH
     MINION_ONE_HITBOX.x = 0
+    MINION_TWO_HITBOX.y = HEIGHT - MINION_HEIGHT
+    MINION_ONE_HITBOX.y = HEIGHT - MINION_HEIGHT
     FIRE_MINION_ONE_HITBOX.x = 0
     FIRE_MINION_TWO_HITBOX.x = WIDTH - MINION_HEIGHT
+    FIRE_MINION_ONE_HITBOX.y = BOSS_Y
+    FIRE_MINION_TWO_HITBOX.y = BOSS_Y
     boss_laser_warning.clear()
     boss_laser_hitbox.clear()
     boss_bullets.clear()
@@ -361,7 +367,6 @@ def draw():
     for left_bullet in left_bullets:
         WINDOW.blit(LEFT_BULLET_IMAGE, (left_bullet.x, left_bullet.y))
 
-
     for laser_hitbox in boss_laser_hitbox:
         WINDOW.blit(LASER_IMAGE, (laser_hitbox.x - 180 / 2 + 10, laser_hitbox.y + 5))
     for laser_warning in boss_laser_warning:
@@ -370,7 +375,7 @@ def draw():
     for pentagram in pentagrams:
         WINDOW.blit(PENTAGRAM_IMAGE, (pentagram.x, pentagram.y))
 
-    if minion_two_alive and not victory:
+    if minion_two_alive:
         if minion_two_left:
             WINDOW.blit(LEFT_MINION_IMAGE, (MINION_TWO_HITBOX.x, MINION_TWO_HITBOX.y))
         if not minion_two_left:
@@ -378,7 +383,7 @@ def draw():
     elif not victory:
         WINDOW.blit(SUMMON_MINION_IMAGE, (MINION_TWO_HITBOX.x + 10, MINION_TWO_HITBOX.y))
 
-    if minion_one_alive and not victory:
+    if minion_one_alive:
         if minion_one_right:
             WINDOW.blit(RIGHT_MINION_IMAGE, (MINION_ONE_HITBOX.x, MINION_ONE_HITBOX.y))
         if not minion_one_right:
@@ -386,12 +391,12 @@ def draw():
     elif not victory:
         WINDOW.blit(SUMMON_MINION_IMAGE, (MINION_ONE_HITBOX.x, MINION_ONE_HITBOX.y))
 
-    if fire_minion_one_alive and not victory and fire_minions_active:
+    if fire_minion_one_alive and fire_minions_active:
         WINDOW.blit(MINION_IMAGE_TWO, (FIRE_MINION_ONE_HITBOX.x, FIRE_MINION_ONE_HITBOX.y))
     elif not victory and fire_minions_active:
         WINDOW.blit(SUMMON_MINION_IMAGE, (FIRE_MINION_ONE_HITBOX.x, FIRE_MINION_ONE_HITBOX.y))
 
-    if fire_minion_two_alive and not victory and fire_minions_active:
+    if fire_minion_two_alive and fire_minions_active:
         WINDOW.blit(MINION_IMAGE_TWO, (FIRE_MINION_TWO_HITBOX.x, FIRE_MINION_TWO_HITBOX.y))
     elif not victory and fire_minions_active:
         WINDOW.blit(SUMMON_MINION_IMAGE, (FIRE_MINION_TWO_HITBOX.x, FIRE_MINION_TWO_HITBOX.y))
@@ -1072,9 +1077,6 @@ def minion_handler():
         fire_minion_two_right, fire_minions_attack_delay, minion_fire_active, \
         fire_minions_fire_amount, fire_minion_one_fire_delay, fire_minion_two_fire_delay, \
         boss_health
-    if victory:
-        minion_two_alive = False
-        minion_one_alive = False
     if current_time - minion_one_timer >= MINION_RESPAWN_COOLDOWN and not minion_one_alive and not victory:
         minion_one_alive = True
         MINION_SUMMON_SOUND.play()
@@ -1090,7 +1092,7 @@ def minion_handler():
         fire_minion_two_alive = True
         MINION_SUMMON_SOUND.play()
 
-    if minion_two_alive and not victory:
+    if minion_two_alive:
         if minion_two_left:
             MINION_TWO_HITBOX.x -= BOSS_MOVEMENT
         if not minion_two_left:
@@ -1129,8 +1131,10 @@ def minion_handler():
         if not minion_two_alive:
             minion_two_timer = current_time
             MINION_TWO_HITBOX.x = WIDTH - MINION_WIDTH
+            if victory:
+                MINION_TWO_HITBOX.y += 328
 
-    if minion_one_alive and not victory:
+    if minion_one_alive:
         if minion_one_right:
             MINION_ONE_HITBOX.x += BOSS_MOVEMENT
         if not minion_one_right:
@@ -1169,6 +1173,8 @@ def minion_handler():
         if not minion_one_alive:
             minion_one_timer = current_time
             MINION_ONE_HITBOX.x = 0
+            if victory:
+                MINION_ONE_HITBOX.y += 100
 
     if not minion_fire_active and fire_minions_active:
         minion_fire_active = True
@@ -1176,7 +1182,7 @@ def minion_handler():
         fire_minion_one_fire_delay = current_time
         fire_minion_two_fire_delay = current_time
 
-    if fire_minion_one_alive and not victory:
+    if fire_minion_one_alive:
         if fire_minion_one_right:
             FIRE_MINION_ONE_HITBOX.x += BOSS_MOVEMENT
         if not fire_minion_one_right:
@@ -1237,7 +1243,7 @@ def minion_handler():
             fire_minion_one_timer = current_time
             fire_minion_one_warnings.clear()
 
-    if fire_minion_two_alive and not victory:
+    if fire_minion_two_alive:
         if fire_minion_two_right:
             FIRE_MINION_TWO_HITBOX.x += BOSS_MOVEMENT
         if not fire_minion_two_right:
@@ -1299,11 +1305,17 @@ def minion_handler():
             fire_minion_two_timer = current_time
             fire_minion_two_warnings.clear()
 
+    if victory and MINION_ONE_HITBOX.y <= HEIGHT and not minion_one_alive:
+        MINION_ONE_HITBOX.y -= 500
+    if victory and MINION_TWO_HITBOX.y <= HEIGHT and not minion_two_alive:
+        MINION_TWO_HITBOX.y -= 500
+
+
 def boss_health_visual():
     boss_health_x = BOSS_HEALTH_X
     boss_health_points.clear()
     for _ in range(boss_health):
-        boss_health_point = pygame.Rect(boss_health_x, BOSS_HEALTH_Y, HEALTH_POINT_WIDTH,
+        boss_health_point = pygame.Rect(boss_health_x, BOSS_HEALTH_Y, HEALTH_POINT_WIDTH + 5,
                                         HEALTH_POINT_HEIGHT)
         boss_health_x += HEALTH_POINT_WIDTH
         boss_health_points.append(boss_health_point)
@@ -1411,21 +1423,21 @@ def player_health_manager():
             player_immunity = True
             DAMAGE_SOUND.play()
         for bullet in boss_bullets:
-            if bullet.colliderect(HITBOX) and not victory:
+            if bullet.colliderect(HITBOX):
                 player_health -= BULLET_DAMAGE
                 DAMAGE_SOUND.play()
                 boss_bullets.remove(bullet)
                 player_immunity_timer = current_time
                 player_health_visual()
         for right_bullet in right_bullets:
-            if right_bullet.colliderect(HITBOX) and not victory:
+            if right_bullet.colliderect(HITBOX):
                 right_bullets.remove(right_bullet)
                 player_health -= BULLET_DAMAGE
                 DAMAGE_SOUND.play()
                 player_immunity_timer = current_time
                 player_health_visual()
         for left_bullet in left_bullets:
-            if left_bullet.colliderect(HITBOX) and not victory:
+            if left_bullet.colliderect(HITBOX):
                 left_bullets.remove(left_bullet)
                 player_health -= BULLET_DAMAGE
                 DAMAGE_SOUND.play()
@@ -1438,15 +1450,15 @@ def player_health_manager():
                 pentagrams.remove(pentagram)
                 DAMAGE_SOUND.play()
         for laser_hitbox in boss_laser_hitbox:
-            if laser_hitbox.colliderect(HITBOX) and not victory:
+            if laser_hitbox.colliderect(HITBOX):
                 player_immunity = True
                 player_health -= BOSS_LASER_DAMAGE
                 DAMAGE_SOUND.play()
-        if MINION_TWO_HITBOX.colliderect(HITBOX) and not victory:
+        if MINION_TWO_HITBOX.colliderect(HITBOX):
             player_immunity = True
             player_health -= MINION_DAMAGE
             DAMAGE_SOUND.play()
-        if MINION_ONE_HITBOX.colliderect(HITBOX) and not victory:
+        if MINION_ONE_HITBOX.colliderect(HITBOX):
             player_immunity = True
             player_health -= MINION_DAMAGE
             DAMAGE_SOUND.play()
@@ -1458,8 +1470,19 @@ def player_health_manager():
                 player_health_visual()
         for blackhole_hitbox in blackhole_hitboxs:
             if HITBOX.colliderect(blackhole_hitbox):
-                player_health -= 1
-                player_health_visual()
+                if not victory:
+                    player_health -= 1
+                    player_health_visual()
+                else:
+                    end_1 = PAUSE_FONT.render("Congratulations. You have won.", 1, (255, 255, 255))
+                    end_2 = PAUSE_FONT.render("As a reward you get to beat the boss again...", 1, (255, 255, 255))
+                    end_3 = PAUSE_FONT.render("YIPPEE!!!", 1, (255, 255, 255))
+                    WINDOW.blit(end_1, (WIDTH / 2 - 400, HEIGHT / 2 - 60))
+                    WINDOW.blit(end_2, (WIDTH / 2 - 525, HEIGHT / 2))
+                    WINDOW.blit(end_3, (WIDTH / 2 - 100, HEIGHT / 2 + 60))
+                    pygame.display.update()
+                    pygame.time.wait(5000)
+                    main()
         if player_immunity:
             player_immunity_timer = current_time
             player_health_visual()
@@ -1486,7 +1509,7 @@ def blackhole_manager():
     global minion_one_alive, minion_two_alive, fire_minion_one_alive, fire_minion_two_alive, \
         boss_health
     for blackhole_hitbox in blackhole_hitboxs:
-        if current_time - blackhole_summon_delay >= BLACKHOLE_SUMMON_DELAY:
+        if current_time - blackhole_summon_delay >= BLACKHOLE_SUMMON_DELAY and not victory:
             if HITBOX.x > blackhole_hitbox.x:
                 blackhole_hitbox.x += BLACKHOLE_MOVEMENT
             elif HITBOX.x < blackhole_hitbox.x + BLACKHOLE_HITBOX_WIDTH/2 + HITBOX_WIDTH:
@@ -1496,6 +1519,17 @@ def blackhole_manager():
                 blackhole_hitbox.y += BLACKHOLE_MOVEMENT
             elif HITBOX.y < blackhole_hitbox.y:
                 blackhole_hitbox.y -= BLACKHOLE_MOVEMENT
+
+        elif victory:
+            if blackhole_hitbox.x > WIDTH/2 - BLACKHOLE_HITBOX_WIDTH/2:
+                blackhole_hitbox.x -= BLACKHOLE_MOVEMENT
+            elif blackhole_hitbox.x < WIDTH/2 - BLACKHOLE_HITBOX_WIDTH/2:
+                blackhole_hitbox.x += BLACKHOLE_MOVEMENT
+
+            if blackhole_hitbox.y > HEIGHT/2 - BLACKHOLE_HITBOX_HEIGHT/2:
+                blackhole_hitbox.y -= BLACKHOLE_MOVEMENT
+            elif blackhole_hitbox.y < HEIGHT/2 - BLACKHOLE_HITBOX_HEIGHT/2:
+                blackhole_hitbox.y += BLACKHOLE_MOVEMENT
 
         # When the black hole contacts and eats a player attack, boss attack, or minion.
         for aura_hitbox in aura:
@@ -1524,42 +1558,32 @@ def blackhole_manager():
             if blackhole_hitbox.colliderect(pentagram):
                 pentagrams.remove(pentagram)
                 boss_health += 1
-                boss_health_x = BOSS_HEALTH_X
-                for _ in range(boss_health):
-                    boss_health_point = pygame.Rect(boss_health_x, BOSS_HEALTH_Y, HEALTH_POINT_WIDTH,
-                                                    HEALTH_POINT_HEIGHT)
-                    boss_health_x += HEALTH_POINT_WIDTH
-                    boss_health_points.append(boss_health_point)
+                boss_health_visual()
         for bullet in boss_bullets:
             if blackhole_hitbox.colliderect(bullet):
                 boss_bullets.remove(bullet)
                 boss_health += 1
-                boss_health_x = BOSS_HEALTH_X
-                for _ in range(boss_health):
-                    boss_health_point = pygame.Rect(boss_health_x, BOSS_HEALTH_Y, HEALTH_POINT_WIDTH,
-                                                    HEALTH_POINT_HEIGHT)
-                    boss_health_x += HEALTH_POINT_WIDTH
-                    boss_health_points.append(boss_health_point)
+                boss_health_visual()
         for right_bullet in right_bullets:
             if blackhole_hitbox.colliderect(right_bullet):
                 right_bullets.remove(right_bullet)
                 boss_health += 1
-                boss_health_x = BOSS_HEALTH_X
-                for _ in range(boss_health):
-                    boss_health_point = pygame.Rect(boss_health_x, BOSS_HEALTH_Y, HEALTH_POINT_WIDTH,
-                                                    HEALTH_POINT_HEIGHT)
-                    boss_health_x += HEALTH_POINT_WIDTH
-                    boss_health_points.append(boss_health_point)
+                boss_health_visual()
         for left_bullet in left_bullets:
             if blackhole_hitbox.colliderect(left_bullet):
                 left_bullets.remove(left_bullet)
                 boss_health += 1
-                boss_health_x = BOSS_HEALTH_X
-                for _ in range(boss_health):
-                    boss_health_point = pygame.Rect(boss_health_x, BOSS_HEALTH_Y, HEALTH_POINT_WIDTH,
-                                                    HEALTH_POINT_HEIGHT)
-                    boss_health_x += HEALTH_POINT_WIDTH
-                    boss_health_points.append(boss_health_point)
+                boss_health_visual()
+
+def song_manager():
+    global song_redo
+    if song_redo == 0 or current_time - song_redo >= SONG_LENGTH + 1000:
+        BOSS_MUSIC.stop()
+        BOSS_MUSIC.play()
+        song_redo = current_time + time_discrepancy
+        print("Callback Ping")
+    if victory:
+        BOSS_MUSIC.stop()
 
 
 def main():
@@ -1585,7 +1609,8 @@ def main():
         dive_sound, paused, time_discrepancy, clock, pentagram_delay, pentagram_cooldown, \
         pentagram_active, pentagram_resummon, pentagram_resummon_cooldown, repeat_attack, \
         blackhole_active, blackhole_summon_delay, boss_center, shield_break, shield_timer, \
-        shield_active, shield_on, shield_cooldown, shield_buildup, shield_rejuv
+        shield_active, shield_on, shield_cooldown, shield_buildup, shield_rejuv, song_redo
+    song_redo = 0
     shield_rejuv = 99999999
     shield_buildup = 99999999
     shield_break = 0
@@ -1701,6 +1726,7 @@ def main():
     run = True
     clock = pygame.time.Clock()
     pause()
+    song_manager()
     while run:
         current_time = pygame.time.get_ticks() - time_discrepancy
         clock.tick(FPS)
@@ -1798,6 +1824,7 @@ def main():
         if player_health <= 0:
             main()
         draw()
+        song_manager()
     pygame.quit()
 
 if __name__ == "__main__":
