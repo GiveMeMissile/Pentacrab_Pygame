@@ -153,6 +153,8 @@ BOSS_HEALTH = 300
 BOSS_HEALTH_X, BOSS_HEALTH_Y = WIDTH / 4, 40
 BOSS_REGEN = 10
 boss_health_points = []
+BOSS_KNOCKBACK = 20
+BOSS_RECORRECTION = 2
 
 BOSS_CONTACT_DAMAGE = 3
 BOSS_ATTACK_DELAY = 5000
@@ -578,6 +580,9 @@ def teleport_visual():
 def boss_movement():
     global boss_right, boss_health, victory, boss_normal_movement, boss_down, side_charge, \
         boss_center
+
+    if BOSS_HITBOX.y < BOSS_Y:
+        BOSS_HITBOX.y += BOSS_RECORRECTION
 
     if BOSS_HITBOX.x <= WIDTH/2 - BOSS_WIDTH/2 + 2.5 and BOSS_HITBOX.x >= WIDTH/2 - BOSS_WIDTH/2 - 2.5:
         BOSS_HITBOX.x = WIDTH/2 - BOSS_WIDTH/2
@@ -1423,6 +1428,7 @@ def boss_health_manager():
             BOSS_DAMAGE_SOUND.play()
             boss_immunity_timer = current_time
             boss_health_points.clear()
+            BOSS_HITBOX.y -= BOSS_KNOCKBACK
             boss_health_visual()
     if boss_health <= BOSS_HEALTH - BOSS_HEALTH / 6 and boss_attack_number <= 2 and not boss_attack:
         boss_attack_number = 3
