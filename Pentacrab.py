@@ -2,13 +2,42 @@ import pygame
 import os
 import random
 
+import os
+import sys
+import pygame
+from pygame import mixer
+
+# Initialize pygame and its mixer
 pygame.init()
+try:
+    mixer.init()
+except Exception:
+    # If the mixer fails to initialize, continue; sounds will fail later with clear errors
+    pass
+
+# Make asset loading robust by ensuring the current working directory is the script directory.
+# Many asset loads in this file use relative paths like "Pentacrab_Assets/XXX" or os.path.join
+# so switching to the script directory makes those paths resolve regardless of how the
+# program is launched (for example, from an IDE with a different working directory).
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ASSET_DIR = os.path.join(BASE_DIR, "Pentacrab_Assets")
+try:
+    os.chdir(BASE_DIR)
+except Exception:
+    # Not fatal; if chdir fails the relative loads may still work depending on run context
+    pass
+
+def asset_path(*parts):
+    """Return an absolute path into the ASSET_DIR. Use asset_path('Background.png') or
+    asset_path('subdir','file.png'). This helper is provided for future use.
+    """
+    return os.path.join(ASSET_DIR, *parts)
 
 # Window control
 WIDTH = 1350
 HEIGHT = 650
 WINDOW = pygame.display.set_mode((WIDTH, HEIGHT))
-BACKGROUND = pygame.transform.scale(pygame.image.load(os.path.join("Pentacrab_Assets", "Background.png")),
+BACKGROUND = pygame.transform.scale(pygame.image.load("Pentacrab_Assets/Background.png"),
                                     (WIDTH, HEIGHT))
 BLACKHOLE_BACKGROUND_EFFECT = pygame.transform.scale(pygame.image.load(os.path.join
                         ("Pentacrab_Assets", "Blackhole_effect.png")), (WIDTH, HEIGHT))
@@ -464,10 +493,10 @@ def player_movements():
     global velocity, left
     if player_health >= 0:
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_d]:
+        if keys[pygame.K_RIGHT]:
             velocity += ACCELERATION
             left = False
-        elif keys[pygame.K_a]:
+        elif keys[pygame.K_LEFT]:
             left = True
             velocity -= ACCELERATION
         else:
@@ -742,7 +771,7 @@ def player_shield_manager():
         shield_on = False
         shields.clear()
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_RSHIFT] or keys[pygame.K_LSHIFT]:
+        if keys[pygame.K_q]:
             shield_rejuv = current_time
             shield = pygame.Rect(HITBOX.x - SHIELD_WIDTH/2 + HITBOX_WIDTH/2, HITBOX.y -
                     (SHIELD_HEIGHT - HITBOX_HEIGHT)/2, SHIELD_WIDTH, SHIELD_HEIGHT)
@@ -1801,7 +1830,7 @@ def main():
                     paused = True
                     pause()
                 
-                if event.key == pygame.K_w and not jump and not falling:
+                if event.key == pygame.K_SPACE and not jump and not falling:
                     jump = True
                     JUMP_SOUND.play()
                     vertical_velocity = JUMP_HEIGHT
@@ -1811,12 +1840,12 @@ def main():
                     tp_delay = current_time
                     tp_cooldown = True
                     TELEPORT_SOUND.play()
-                if event.key == pygame.K_LEFT and not tp_cooldown and not shield_on:
+                if event.key == pygame.K_a and not tp_cooldown and not shield_on:
                     tele_left = True
                     tp_delay = current_time
                     tp_cooldown = True
                     TELEPORT_SOUND.play()
-                if event.key == pygame.K_RIGHT and not tp_cooldown and not shield_on:
+                if event.key == pygame.K_d and not tp_cooldown and not shield_on:
                     tele_right = True
                     tp_delay = current_time
                     tp_cooldown = True
@@ -1829,7 +1858,7 @@ def main():
                     BULLET_FIRE_SOUND.stop()
                     ELECTRIC_AURA_SOUND.play()
 
-                if event.key == pygame.K_LCTRL:
+                if event.key == pygame.K_s:
                     indicator_change = False
                     if lightning_down and not indicator_change:
                         lightning_down = False
@@ -1865,7 +1894,7 @@ def main():
                         lightning_left = False
                         lightning_up = True
 
-                if event.key == pygame.K_SPACE and not lightning_cooldown and not shield_on:
+                if event.key == pygame.K_w and not lightning_cooldown and not shield_on:
                     LIGHTNING_BOLT_SOUND.play()
                     lightning_activate = True
 
