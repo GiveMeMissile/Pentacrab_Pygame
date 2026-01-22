@@ -793,6 +793,11 @@ def player_shield_manager():
                 shield_break += (current_time - shield_buildup)*10
                 shield_health_visual()
 
+        for tractor_beam in tractor_beams:
+            if shield.colliderect(tractor_beam):
+                shield_break += (current_time - shield_buildup)*10
+                shield_health_visual()
+
         for pentagram in pentagrams:
             if shield.colliderect(pentagram):
                 pentagrams.remove(pentagram)
@@ -953,7 +958,8 @@ def boss_attack_handler():
                 boss_bullets.append(bullet)
                 bullet_delay_timer = current_time
                 bullet_total += 1
-                BULLET_FIRE_SOUND.play()
+                if bullet_total % 3 == 0:
+                    BULLET_FIRE_SOUND.play()
             else:
                 if current_time - bullet_delay_timer >= BULLET_REDO:
                     bullet_redo_delay = False
@@ -975,6 +981,7 @@ def boss_attack_handler():
                 bullet_delay_timer = 0
             if current_time - side_attack_delayed >= BOSS_SIDE_TURN_DELAY and attack_redo < 6:
                 boss_side_right = True
+            side_bullets_fired = 0
             if boss_side_right:
                 boss_bullet_warning.clear()
                 bullet_warning = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH, BOSS_HITBOX.y + BOSS_HEIGHT/2,
@@ -985,7 +992,9 @@ def boss_attack_handler():
                     right_bullet = pygame.Rect(BOSS_HITBOX.x + BOSS_WIDTH, BOSS_HITBOX.y + BOSS_HEIGHT/2,
                                     BOSS_BULLET_DIMENSIONS, BOSS_BULLET_DIMENSIONS)
                     right_bullets.append(right_bullet)
-                    BULLET_FIRE_SOUND.play()
+                    if side_bullets_fired % 3 == 0:
+                        BULLET_FIRE_SOUND.play()
+                    side_bullets_fired += 1
                 if BOSS_HITBOX.y <= BOSS_Y or HEIGHT - BOSS_HEIGHT <= BOSS_HITBOX.y:
                     attack_redo += 1
                 if attack_redo == 6 and not side_charge:
@@ -1006,7 +1015,9 @@ def boss_attack_handler():
                     left_bullet = pygame.Rect(BOSS_HITBOX.x - BOSS_WARNING_DIMENSIONS, BOSS_HITBOX.y + BOSS_HEIGHT/2,
                                               BOSS_BULLET_DIMENSIONS, BOSS_BULLET_DIMENSIONS)
                     left_bullets.append(left_bullet)
-                    BULLET_FIRE_SOUND.play()
+                    if side_bullets_fired % 3 == 0:
+                        BULLET_FIRE_SOUND.play()
+                    side_bullets_fired += 1
                 if attack_redo >= 11 and BOSS_HITBOX.y <= BOSS_Y:
                     boss_side_left = False
                     attack_end = True
@@ -1304,7 +1315,8 @@ def minion_handler():
                 bullet = pygame.Rect(FIRE_MINION_ONE_HITBOX.x + 15, FIRE_MINION_ONE_HITBOX.y +
                             MINION_HEIGHT,BOSS_BULLET_DIMENSIONS, BOSS_BULLET_DIMENSIONS)
                 boss_bullets.append(bullet)
-                BULLET_FIRE_SOUND.play()
+                if fire_minions_fire_amount % 3 == 0:
+                    BULLET_FIRE_SOUND.play()
                 fire_minions_fire_amount += 1
             if fire_minions_fire_amount >= 20:
                 minion_fire_active = False
@@ -1366,7 +1378,8 @@ def minion_handler():
                 bullet = pygame.Rect(FIRE_MINION_TWO_HITBOX.x + 15, FIRE_MINION_TWO_HITBOX.y +
                                      MINION_HEIGHT, BOSS_BULLET_DIMENSIONS, BOSS_BULLET_DIMENSIONS)
                 boss_bullets.append(bullet)
-                BULLET_FIRE_SOUND.play()
+                if fire_minions_fire_amount % 3 == 0:
+                    BULLET_FIRE_SOUND.play()
                 fire_minions_fire_amount += 1
             if fire_minions_fire_amount >= 20:
                 minion_fire_active = False
@@ -1668,10 +1681,11 @@ def blackhole_manager():
 def song_manager():
     global song_redo
     if song_redo == 0 or current_time - song_redo >= SONG_LENGTH + 1000 and not blackhole_active:
-        BOSS_MUSIC.stop()
+        pygame.mixer.pause()
         BOSS_MUSIC.play()
         BOSS_MUSIC.set_volume(0.25)
         song_redo = current_time + time_discrepancy
+        pygame.mixer.unpause()
     if victory:
         BOSS_MUSIC.stop()
         FINAL_BOSS_SONG.stop()
